@@ -25,7 +25,7 @@ urlpatterns = [
     path('profile/', views.ProfileView.as_view(), name='profile')
 ]
 #
-level = getattr(settings, 'LOG_IN_PAGE', 'entrance')
+level = getattr(settings, 'LOG_IN_PAGE', 'access')
 for uP in urlpatterns:  # pragma: no cover
     if uP.name == level:
         log_in = path('log_in/', uP.callback, name="log_in")

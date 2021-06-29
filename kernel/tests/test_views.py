@@ -1,3 +1,5 @@
+import unittest
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -10,6 +12,8 @@ class ViewsTest(TestCase):
     def setUpTestData(cls):
         cls.root_url = reverse('index')
         cls.home_url = reverse('home')
+        cls.login_url = reverse('access')
+        cls.login_template = 'access.html'
         cls.root_template = 'frontpage.html'
         cls.home_template = 'homepage.html'
         cls.usr = User.objects.create_user(username='dorothy',
@@ -17,6 +21,7 @@ class ViewsTest(TestCase):
                                            is_active=True,
                                            password='rubySlippers')
 
+    @unittest.skip('No front page')
     def test_front_page(self):
         response = self.client.get(self.root_url)
         self.assertEqual(response.status_code, 200)
@@ -33,7 +38,7 @@ class ViewsTest(TestCase):
     def test_home_page(self):
         response = self.client.get(self.home_url)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, self.root_url,
+        self.assertEqual(response.url, self.login_url,
                          "home page shouldn't be available without logging in")
 
         self.client.force_login(self.usr)

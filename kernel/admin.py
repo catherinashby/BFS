@@ -1,17 +1,17 @@
 from django.contrib import admin
 
 
-admin.site.site_header = "webBase Administration"
+admin.site.site_header = "BFS Administration"
 # AdminSite.site_header
 #    The text to put at the top of each admin page, as an <h1> (a string).
 #    By default, this is "Django administration".
 
-admin.site.site_title = "webBase Administration"
+admin.site.site_title = "BFS Administration"
 # AdminSite.site_title
 #    The text to put at the end of each admin page as <title> (a string).
 #    By default, this is "Django site admin".
 
-admin.site.index_title = "webBase Site Administration"
+admin.site.index_title = "BFS Site Administration"
 # AdminSite.index_title
 #    The text to put at the top of the admin index page (a string).
 #    By default, this is "Site administration".

@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 def home(request):
     context = {'request': request}
     if not request.user.is_authenticated:
-        return redirect('index')
+        return redirect('access')
 
     template = 'homepage.html'
     return render(request, template, context)

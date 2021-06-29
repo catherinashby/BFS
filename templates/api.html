@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+  {% block styles %}
+    .va_m	{ display: inline-block; padding: 1em 2em; }
+    section	{
+			border: thin solid silver; padding: 1em; margin: 0 2em;
+			line-height: 1.5;
+			}
+    section a	{ text-decoration: none; }
+    section a:hover	{ text-decoration: underline; }
+    section a,
+    section a:hover,
+    section a:visited	{ color: black; }
+    ul.breadcrumbs	{
+			border: thin solid black; padding: 1em; margin-bottom: 1em;
+			background-color: #F5F5F5; color: black;
+    		}
+    ul.breadcrumbs li	{ display: inline-block; }
+    ul.breadcrumbs li:after	{ content:"/"; padding: 0 5px 0 10px; }
+    ul.breadcrumbs li.active:after	{ content:""; }
+    ul.pager	{ float: right;
+			border: thin solid black; padding: 1em; margin-bottom:1em;
+			background-color: #F5F5F5; color: black;
+			text-align: right;
+    		}
+	ul.pager li	{ border: thin solid gray;
+			display: inline-block; padding: 0.25em 0.5em;
+			}
+    div.json	{
+    		border: thin solid black; padding:1em;
+			background-color: #F5F5F5; color: black;
+    		}
+    div.json .punc	{ font-weight: 700; }
+    div.json label	{ vertical-align: top; }
+    div.json label:before	{ content: '"'; }
+    div.json label:after	{ content: '":'; padding-right:0.5em; }
+    div.value	{ display: inline-block; }
+    div.inner	{ display: inline-block; margin-left: 25px; }
+  {% endblock %}
+
+  {% block contents %}
+	  <ul class="breadcrumbs">
+	  {% for name, url in breadcrumbs %}
+	    {% if forloop.last %}
+	    <li class="active">{{ name }}</li>
+	    {% else %}
+	    <li><a href="{{ url }}">{{ name }}</a></li>
+	    {% endif %}
+	  {% endfor %}
+	  </ul>
+      <div class="group">
+	    {% if pager %}
+	    <ul class="pager">
+	      {% if pager.prev and pager.prev > 1 %}
+	      <li><a href="{{ pager.url }}?page=1">First</a></li>
+	      {% endif %}
+		  {% if pager.prev %}
+		  <li><a href="{{ pager.url }}?page={{ pager.prev }}">Prev</a></li>
+		  {% endif %}
+		  <li>Page {{ pager.curr }} of {{ pager.last }}</li>
+		  {% if pager.next and pager.next < pager.last %}
+		  <li><a href="{{ pager.url }}?page={{ pager.next }}">Next</a></li>
+		  {% endif %}
+		  {% if pager.last > pager.curr %}
+		  <li><a href="{{ pager.url }}?page={{ pager.last }}">Last</a></li>
+		  {% endif %}
+	    </ul>
+	    {% endif %}
+      </div>
+      <div class="json">
+        <div class="punc">{</div>
+        {% if json.url %}
+        <div class="dict_entry">
+		  <label>URL</label>
+		  <div class="value">{{ json.url|urlize }}</div>
+        </div>
+        {% endif %}
+        {% for k,v in json.items|dictsort:"0.lower" %}
+          {% if not k == "url" %}
+        <div class="dict_entry">
+          <label>{{ k }}</label>
+          <div class="value">
+          {% if v.0.url %}
+            <div class="punc">[</div>
+            <div class="inner">
+            {% for obj in v %}
+        	  <div class="punc">{</div>
+              {% if obj.url %}
+                <div class="dict_entry">
+                  <label>URL</label>
+                  <div class="value">{{ obj.url|urlize }}
+                    <span class="punc">,</span>
+                  </div>
+                </div>
+              {% endif %}
+              {% for kk, vv in obj.items|dictsort:"0.lower" %}
+                {% if not kk == "url" %}
+                <div class="dict_entry">
+                  <label>{{ kk }}</label>
+                  <div class="value">{{ vv|urlize }}
+                    {% if not forloop.last %}
+                    <span class="punc">,</span>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endif %}
+              {% endfor %}
+        	  <div class="punc">}
+                {% if not forloop.last %}
+                <span class="punc">,</span>
+                {% endif %}
+        	  </div>
+            {% endfor %}
+            </div>
+            <div class="punc">]
+              {% if not forloop.last %}
+              <span class="punc">,</span>
+              {% endif %}
+            </div>
+          {% else %}
+			{{ v|urlize }}
+            {% if not forloop.last %}
+            <span class="punc">,</span>
+            {% endif %}
+		  {% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
+          <div class="punc">}</div>
+        </div>
+	  </div>
+  {% endblock %}

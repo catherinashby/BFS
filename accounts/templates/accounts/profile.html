@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block styles %}
+div.cpw         { position: relative; right: -10vw;
+                  padding: 0 1em 1em; text-align: right; overflow: visible; }
+div.cpw a       { font-family: Arial; font-weight: 700; padding: 0.5em;
+                  color: white; background-color: #5f9ea0; /* Cadet Blue */
+                  text-decoration: none; border: thin solid black; }
+#formbox        { position: relative; overflow: visible;
+                  width: 70vw; margin: 5vh 0 5vh 15vw; }
+#formbox p.top_label    { text-align: center; overflow: visible; }
+#formbox form p { padding: 0.5em 0; text-align: center;
+                  overflow: visible;
+                  min-width: 67vw; margin: 0 auto; }
+#formbox label  { display: inline-block; min-width: 100px;
+                  padding-right: 5px; text-align: right; }
+#formbox select { min-width: 148px; }
+{% endblock styles %}
+
+{% block scripts %}
+  <script>
+  document.addEventListener("DOMContentLoaded", function(){
+    // Handler when the DOM is fully loaded
+    let li = document.querySelector('#user_menu + ul').children[0];
+    while (li.nextElementSibling )    {
+        if (li.textContent.trim() == 'Profile')  break;
+        li = li.nextElementSibling; }
+    if (li) {
+        li.parentElement.removeChild(li); }
+    document.getElementById("id_first_name").focus();
+ });
+  </script>
+{% endblock scripts %}
+
+{% block contents %}
+    <div id="formbox">
+      <div class="cpw">
+        <a href="{% url 'password_change' %}">Change Password</a>
+      </div>
+      <p class="top_label">
+        <em class="big bold">
+        {% if request.user.userprofile.gender %}
+          Edit Profile{% else %}Tell us about yourself,
+        {% endif %}</em>
+      </p>
+      <form method="post">
+        {% csrf_token %}
+        <p class="ta_c big">{{ request.user.username }}</p>
+      {% if saved %}<p>Successfully saved.</p>{% endif %}
+        {{ userform.as_p }}
+        {{ form.as_p }}
+        <p class="ta_c"><button type="submit">Save</button></p>
+      </form>
+    </div>
+{% endblock contents %}

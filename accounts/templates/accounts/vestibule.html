@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block styles %}
+p.headline  {
+        margin: 5vh 20vw;
+        padding: 0 1em;
+        text-align: center;
+        overflow: visible;
+        }
+#formbox    {
+        margin: 5vh 10vw;
+        text-align: center;
+        }
+#formbox p {
+        padding: 2vh 1vw;
+        overflow: visible;
+        text-align: center;
+        }
+#formbox label  {
+        display: inline-block;
+        min-width: 130px;
+        text-align: right;
+        padding-right: 1vw;
+        overflow: visible;
+        }
+#formbox ul.errorlist   {
+        display: inline-block;
+        padding: 1em;
+        }
+#formbox button {
+        width: 20vw;
+        padding: 1vh 0;
+        }
+#wrap   {
+        font-size: larger;
+        margin: 5vh 10vw;
+        text-align: center;
+        }
+#wrap p {
+        padding: 1em;
+        }
+{% endblock styles %}
+
+{% block scripts %}
+  <script>
+  document.addEventListener("DOMContentLoaded", function(){
+    // Handler when the DOM is fully loaded
+    document.getElementById("id_new_password1").focus();
+ });
+  </script>
+{% endblock scripts %}
+
+{% block personalization %}{% endblock personalization %}
+
+{% block contents %}
+{% if validlink %}
+    <p class="headline">
+	  <em class="big bold">
+	  Please enter your new password twice so we can verify you typed it in correctly.
+	  </em>
+	</p>
+    <div id="formbox">
+      <form method="post">
+        {% csrf_token %}
+        <p>
+          <label for="id_new_password1">New password:</label>
+          {{ form.new_password1 }}
+          {{ form.new_password1.errors }}
+        </p>
+        <p>
+          <label for="id_new_password2">Confirm password:</label>
+          {{ form.new_password2 }}
+          {{ form.new_password2.errors }}
+        </p>
+        {{ form.non_field_errors }}
+        <p class="btns">
+            <button type="submit">Submit</button>
+        </p>
+      </form>
+    </div>
+{% else %}
+<p>
+</p>
+    <div id="wrap">
+      <p class="big"><em class="big bold">Sorry ...</em></p>
+      <p>
+        The registration link was invalid, possibly because it has already been used.
+        Please re-register.
+      </p>
+    </div>
+{% endif %}
+
+{% endblock contents %}

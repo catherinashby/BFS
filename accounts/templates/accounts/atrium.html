@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block styles %}
+#formbox        {
+        margin: 5vh 20vw;
+        text-align: center;
+        }
+#formbox p {
+        padding: 2vh 1vw;
+        overflow: visible;
+        text-align: center;
+        }
+#formbox label {
+        overflow: visible;
+        }
+#formbox label  {
+        display: inline-block;
+        padding-right: 1vw;
+        }
+#formbox ul.errorlist   {
+        padding: 1em;
+        }
+#formbox button {
+        width: 20vw;
+        padding: 1vh 0;
+        }
+{% endblock styles %}
+
+{% block personalization %}{% endblock personalization %}
+
+{% block contents %}
+    <div id="formbox">
+      <p class="headline"><em class="big bold">{{ form.email.label_tag }}</em></p>
+      <form method="post">
+        {% csrf_token %}
+        {{ form.usrname }}
+        <p>
+          {{ form.email }}
+          {{ form.email.errors }}
+        </p>
+        {{ form.non_field_errors }}
+        <p class="btns">
+            <button type="submit">Submit</button>
+        </p>
+      </form>
+    </div>
+{% endblock contents %}

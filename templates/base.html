@@ -1,0 +1,50 @@
+{% load i18n static %}
+<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE|default:'en-us' }}">
+<!-- TEMPLATE: {% template_filename %} -->
+{% firstof notAcontextVariable "web Base" as site_name %}
+{% firstof logoImage "&#128376;" "&#8251;" as logo %}
+<head>
+  <meta charset="utf8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ site_name }}{% endblock title %}</title>
+  <link rel="shortcut icon" type="image/ico" href="{% static 'common/img/favicon.ico' %}"/>
+{% block fontspace %}{% endblock fontspace %}
+ <link rel="stylesheet" type="text/css" href="{% static 'common/css/minimum.css' %}" />
+  <link rel="stylesheet" type="text/css" href="{% static 'common/css/style.css' %}" />
+  <style type="text/css" >{% block styles %}{% endblock %}</style>
+  <script src="{% static 'common/js/starter.js' %}"></script>
+{% block scripts %}{% endblock scripts %}
+</head>
+<body>
+  <header>{% block header %}
+    <div class="personalization">{% block personalization %}
+    {% if request %}
+      {% if request.user.is_anonymous %}
+        <a href="{% url 'log_in' %}" title="Enter">
+          <span class="icon">&#9094;</span>
+        </a>{% else %}
+        <a id="user_menu" class="pointer">
+          <span class="ident {% user_class %}">{% user_initials %}</span>
+        </a>
+        <ul class="hidden">{% if request.user.is_staff %}
+          <li><a href="/admin/">Admin</a></li>{% endif %}
+          {% if not pg_name == 'profile' %}<li>
+            <a href="{% url 'profile' %}">Profile</a></li>{% endif %}
+          <li><a href="{% url 'logout' %}">Log Out</a></li>
+        </ul>
+      {% endif %}
+    {% endif %}
+    {% endblock personalization %}</div>
+    <div class="branding">{% block branding %}
+      <a class="iblk" href="{% url 'home' %}" title="Home">
+        <span class="icon">{{ logo }}</span>
+      </a>
+      <span class="text">{{ site_name }}</span>
+    {% endblock branding %}    </div>
+  {% endblock header%}</header>
+  <main>{% block contents %}{% endblock %}  </main>
+  <footer>{% block footer %}{% endblock %}</footer>
+</body>
+</html>

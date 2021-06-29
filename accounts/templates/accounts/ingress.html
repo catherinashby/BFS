@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block styles %}
+#formbox        {
+        margin: 5vh 20vw;
+        text-align: center;
+        }
+#formbox #id_username   {
+        height: 0;
+        }
+#formbox p {
+        padding: 2vh 1vw;
+        overflow: visible;
+        text-align: center;
+        }
+#formbox label {
+        overflow: visible;
+        }
+#formbox label  {
+        display: inline-block;
+        padding-right: 1vw;
+        }
+#formbox ul.errorlist   {
+        padding: 1em;
+        }
+#formbox button {
+        width: 20vw;
+        padding: 1vh 0;
+        }
+{% endblock styles %}
+
+{% block scripts %}
+  <script>
+  document.addEventListener("DOMContentLoaded", function(){
+    // Handler when the DOM is fully loaded
+    document.getElementById("id_password").focus();
+ });
+  </script>
+{% endblock scripts %}
+
+{% block personalization %}{% endblock personalization %}
+
+{% block contents %}
+    <div id="formbox">
+      <p class="headline"><em class="big bold">{{ form.password.label_tag }}</em></p>
+      <form method="post">
+        {% csrf_token %}
+        {{ form.username }}
+        <p>
+          {{ form.password }}
+          {{ form.password.errors }}
+        </p>
+        {{ form.non_field_errors }}
+        <p class="btns">
+            <button type="submit">Submit</button>
+        </p>
+      </form>
+    </div>
+{% endblock contents %}

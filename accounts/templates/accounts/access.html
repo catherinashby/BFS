@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block styles %}
+#formbox        { margin: 5vh 20vw; text-align: center; }
+#formbox form p { padding: 0.5em 0; }
+#formbox label  { display: inline-block; min-width: 95px;
+                  padding-right: 5px; text-align: right; }
+#formbox ul.errorlist   { padding: 1em; }
+p.headline,
+p.resetter,
+p.register      { padding: 0.5em 1em; line-height: 1.5; }
+p.resetter a    { font-size: smaller; }
+p.register span { display: block; }
+{% endblock styles %}
+
+{% block scripts %}
+  <script>
+  document.addEventListener("DOMContentLoaded", function(){
+    // Handler when the DOM is fully loaded
+    document.getElementById("id_username").focus();
+ });
+  </script>
+{% endblock scripts %}
+
+{% block personalization %}{% endblock personalization %}
+
+{% block contents %}
+    <div id="formbox">
+      <p class="headline big"><em class="big bold">Login</em></p>
+      <form method="post">
+        {% csrf_token %}
+        <p>
+          {{ form.username.label_tag }}
+          {{ form.username }}
+          {{ form.username.errors }}
+        </p>
+        <p>
+          {{ form.password.label_tag }}
+          {{ form.password }}
+          {{ form.password.errors }}
+        </p>
+        {{ form.non_field_errors }}
+        <p class="ta_c"><button type="submit">Login</button></p>
+      </form>
+      <p class="resetter">
+        Forgot your password?
+        <a href="{% url 'password_reset' %}">&#128561;</a>
+      </p>
+      <p class="register">
+      <span>&#128608;&nbsp;&#128611;&nbsp;&#128609;&nbsp;&#128610;</span>
+      Not a member yet?  Click <a href="{% url 'signup' %}">here</a> to create an account
+      </p>
+    </div>
+{% endblock contents %}

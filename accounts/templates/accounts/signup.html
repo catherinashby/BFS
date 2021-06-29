@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block styles %}
+#formbox                { margin: 5vh 20vw; text-align: center; }
+#formbox form           { line-height: 1.5; }
+#formbox form p         { padding: 0.5em; }
+#formbox form > ul      { display: inline-block; color: gray;
+                          font-size: smaller; text-align: left; }
+#formbox form > ul li   { padding: 0 1em; }
+#formbox label          { display: inline-block; min-width: 95px;
+                          padding-right: 5px; text-align: right; }
+#formbox span.helptext  { display: block; font-size: smaller;
+                          color: gray; padding: 0 1em; }
+#formbox ul.errorlist   { padding: 1em; }
+p.headline              { padding: 1em;  line-height: 1.5; }
+{% endblock styles %}
+
+{% block personalization %}{% endblock personalization %}
+
+{% block contents %}
+    <div id="formbox">
+      <p class="headline big"><em class="big bold">Sign Up</em></p>
+      <form  method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <p class="ta_c"><button type="submit">Register</button></p>
+      </form>
+    </div>
+{% endblock contents %}

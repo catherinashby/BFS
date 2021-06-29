@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+#wrap   { margin: 5vh 20vw; text-align: center; }
+#wrap p { padding: 1em; }
+{% endblock styles %}
+
+{% block personalization %}{% endblock personalization %}
+
+{% block contents %}
+    <div id="wrap">
+      <p class="big"><em class="big bold">Check your inbox.</em></p>
+      <p>We've emailed you a link to complete your registration. You should receive the email shortly!</p>
+    </div>
+{% if messages %}<hr/>
+<ul class="messages">{% for message in messages %}
+  <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+  {% endfor %}</ul>
+{% endif %}
+
+{% endblock contents %}

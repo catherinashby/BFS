@@ -1,0 +1,72 @@
+/* generics */
+.bold			{ font-weight: 700; }
+.italic			{ font-style: italic; }
+.small			{ font-size: smaller; }
+.big			{ font-size: larger; }
+.f_left			{ float: left; }
+.f_right		{ float: right; }
+.pointer		{ cursor: pointer; }
+.iblk			{ display: inline-block; }
+.shown			{ display: block; }
+.hidden			{ display: none; }
+.ihidden		{ display: none; }
+.o_h			{ overflow: hidden; }
+.d_t			{ display: table; }
+.d_tr			{ display: table-row; }
+.d_tc			{ display: table-cell; }
+.fullsize		{ height: 100%; width: 100%; }
+.ta_c			{ text-align: center; }
+.ta_l			{ text-align: left; }
+.ta_r			{ text-align: right; }
+.va_t			{ vertical-align: top; }
+.ws_nw			{ white-space: nowrap; }
+/* the 'clearfix' hack */
+.group:after	{ content: " "; display: block; clear: both; }
+
+.red			{ color: #CC0000; }
+.white			{ color: #FFFFFF; }
+.black			{ color: #000000; }
+.trans			{ color: transparent; }
+
+.bgChar	{ display: inline-block; margin: 1px; }
+
+/* the Base Template */
+html,
+body	{ position: relative; height: 100%; }
+footer	{ position: absolute; bottom: 0; left: 0; width: 100%; }
+header div.branding span.icon	{
+        display: inline-block; font-size: xx-large;
+        padding: 0.25em; margin: 0.25em;
+        }
+header div.branding span.text	{
+        font-size: x-large; font-weight: 700;
+        }
+header div.personalization		{
+        float: right; line-height: 1.5;
+        padding: 0.5em; margin: 0 1em;
+        }
+header div.personalization a	{
+        text-decoration: none;
+        }
+header div.personalization span.icon	{
+        font-size: 24pt;
+        }
+header div.personalization span.superstaff   {
+        background-color: #98fb98; /* Pale Green */
+        }
+header div.personalization span.super  {
+        background-color: #b0c4de; /* Light Steel Blue */
+        }
+header div.personalization span.staff   {
+        background-color: #eedd82; /* Light Goldenrod */
+        }
+header div.personalization span.ident   {
+        padding: 0.5em; border-radius: 1em;
+        border: thin solid lightgray;
+        }
+header div.personalization ul {
+        position: absolute; right: 1vw;
+        padding: 1vh 1vw; margin-top: 2vh;
+        background-color: #f5f5dc; /* Beige */
+        z-index: 9;
+        }

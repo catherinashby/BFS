@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block styles %}
+#formbox        {
+        margin: 5vh 20vw;
+        text-align: center;
+        }
+#formbox p {
+        padding: 2vh 1vw;
+        overflow: visible;
+        text-align: center;
+        }
+#formbox label {
+        overflow: visible;
+        }
+#formbox span.wrap {
+        display: inline-block;
+        min-width: 80%;
+        white-space: nowrap;
+        }
+#formbox label  {
+        display: inline-block;
+        padding-right: 1vw;
+        }
+#formbox form span.icon {
+        padding-left: 1vw;
+        cursor: pointer;
+        }
+#formbox form span.helptext   {
+        display: inline-block;
+        padding: 2vh 2vw 0 2vw;
+        }
+#formbox ul.errorlist   {
+        display: inline-block;
+        padding: 1em;
+        }
+#formbox button {
+        width: 20vw;
+        padding: 1vh 0;
+        }
+#formbox span.spacer    {
+        display: inline-block;
+        min-width: 5vw;
+        }
+p.resetter      {
+        padding: 0.5em 1em;
+        line-height: 1.5;
+        }
+p.resetter a    {
+        font-size: smaller;
+        }
+{% endblock styles %}
+
+{% block scripts %}
+  <script>
+  document.addEventListener("DOMContentLoaded", function(){
+    // Handler when the DOM is fully loaded
+    var btn = document.querySelector('#formbox span.icon');
+    if ( btn ) {
+      btn.addEventListener("click", function(){
+        var txt = document.querySelector('#formbox span.helptext');
+        txt.classList.toggle('trans');
+        return;
+      })
+    }
+    var btns = document.querySelectorAll('#formbox p.btns button');
+    if ( btns ) {
+        btns.forEach( nd => nd.addEventListener("click", function(){
+          var inp = document.querySelector('#formbox #id_pressed');
+          inp.value = this.value;
+          inp.form.submit();
+        }));
+    }
+    document.getElementById("id_username").focus();
+ });
+  </script>
+{% endblock scripts %}
+
+{% block personalization %}{% endblock personalization %}
+
+{% block contents %}
+    <div id="formbox">
+      <p class="headline"><em class="big bold">{{ form.username.label_tag }}</em></p>
+      <form method="post">
+        {% csrf_token %}
+        <p>
+          <span class="wrap">
+            {{ form.username }}<span class="icon">&#9432;</span>
+          </span>
+          {{ form.username.errors }}
+          <span class="helptext trans">{{ form.username.help_text }}</span>
+        </p>
+        {{ form.non_field_errors }}
+        <p class="btns">
+            {{ form.pressed }}
+            <button type="button" value="login">Login</button>
+            <span class="spacer"></span>
+            <button type="button" value="register">Register</button>
+            <br/>
+            {% if form.pressed.errors %}
+            <span class="btn_err">You must press a button to proceed.</span>
+            {% endif %}
+        </p>
+      </form>
+      <p class="resetter">
+        Forgot your password?
+        <a href="{% url 'password_reset' %}" title="Click here to request a password reset">&#128561;</a>
+      </p>
+    </div>
+{% endblock contents %}

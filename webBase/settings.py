@@ -28,6 +28,7 @@ DEBUG = False
 # Application definition
 
 INSTALLED_APPS = [
+    'inventory.apps.InventoryConfig',
     'kernel.apps.KernelConfig',
     'accounts.apps.AccountsConfig',
     'django.contrib.admin',

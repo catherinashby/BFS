@@ -1,5 +1,10 @@
-from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.template.response import TemplateResponse
 
 
+@login_required
 def index(request):
-    return HttpResponse("Hello, world. You're at the inventory index.")
+    context = {}
+    template = "inventory/index.html"
+
+    return TemplateResponse(request, template, context)

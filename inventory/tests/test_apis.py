@@ -3,10 +3,63 @@ from datetime import date
 
 from django.http import JsonResponse
 from django.test import RequestFactory, TestCase
+from django.urls import path
 
 from accounts.models import User
-from ..apis import QSencoder, prepare, identifier_detail
+from ..apis import Preparer, QSencoder, ApiError, ApiBase
 from ..models import Identifier
+
+
+class TestPreparer(TestCase):
+
+    def test_prepare(self):
+        d = {'barcode': 'barcode', 'linked_code': 'linked_code'}
+
+        prep = Preparer(None)
+        rc = prep.prepare(d)
+        self.assertDictEqual(rc, d, "should return data unchanged")
+
+        id_dict = {'barcode': '1007', 'linked_code': 'UPC'}
+        id = Identifier(barcode=id_dict['barcode'],
+                        linked_code=id_dict['linked_code'])
+        prep = Preparer(d)
+        rc = prep.prepare(id)
+        self.assertDictEqual(rc, id_dict)
+
+        rcd_dict = {'id': 100, 'identifier': id.get_absolute_url()}
+        rcd = {'id': rcd_dict['id'], 'identifier': id}
+        flds = {'id': 'id', 'identifier': 'identifier'}
+        rc = prep.prepare(rcd, flds)
+        self.assertDictEqual(rc, rcd_dict)
+        return
+
+    def test_extract_data(self):
+
+        class SimpleObject(object):
+            count = 1
+            result = object()
+
+        class TestObject(object):
+            options = {'first': 1, 'last': 99}
+            child = SimpleObject()
+
+            def say(self):
+                return 'testing....'
+
+        to = TestObject()
+        prep = Preparer(None)
+
+        rc = prep.extract_data('.', 'text')
+        self.assertEquals(rc, 'text', "should return data unchanged")
+        rc = prep.extract_data('count', None)
+        self.assertIsNone(rc, "should handle null case")
+        rc = prep.extract_data('say', to)
+        self.assertEquals(rc, to.say(), "should return function result")
+        # test parsing of dotted names
+        rc = prep.extract_data('options.last', to)
+        self.assertEquals(rc, 99, "should handle dictionary entries")
+        rc = prep.extract_data('child.result.__class__', to)
+        self.assertIsInstance(rc, object, "should handle multiple dot-levels")
 
 
 class TestQSencoder(TestCase):
@@ -31,18 +84,57 @@ class TestQSencoder(TestCase):
         self.assertEquals(result, txt)
 
 
-class IdentifierAPITest(TestCase):
+class TestApiError(TestCase):
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.rf = RequestFactory()
-        cls.id = Identifier.idents.create(barcode='1007')
+    def err_func(self, msg=None):
+        raise ApiError(msg)
 
-    def test_get_identifier(self):
-        pk = '1007'
-        url = '/inventory/identifier/{}/'.format(pk)
-        req = self.rf.get(url)
-        resp = identifier_detail(req, pk)
-        self.assertIsInstance(resp, JsonResponse, "should be a JsonResponse")
-        self.assertEquals(resp.status_code, 200, "response should succeed")
+    def test_empty_message(self):
+        with self.assertRaisesMessage(ApiError, 'Api Error') as ctx:
+            self.err_func()
 
+    def test_with_message(self):
+        with self.assertRaisesMessage(ApiError, 'custom message') as ctx:
+            self.err_func('custom message')
+
+
+class TestApiBase(TestCase):
+
+    def test_init(self):
+        api = ApiBase()
+        self.assertIsInstance(api, ApiBase)
+
+    def test_classmethods(self):
+        name = ApiBase.build_url_name('list')
+        self.assertEquals(name, 'api_base_list')
+
+        pathlist = ['base', 'base/<int:pk>']
+        urls = ApiBase.urls()
+        paths = [x.pattern._route for x in urls]
+        for path in paths:
+            self.assertIn(path, pathlist, "{} should be a route".format(path))
+
+    def test_handler(self):
+
+        rf = RequestFactory()
+        func = ApiBase.as_list()
+
+        resp = func(rf.options('check'))
+        self.assertIsInstance(resp, JsonResponse, "should return JsonResponse")
+        d = json.loads(resp.content)
+        self.assertIn('error', d, "should contain error message")
+        self.assertEquals(d['error'], "The specified HTTP method OPTIONS is not implemented.")
+
+        with self.settings(DEBUG=True):
+            resp = func(rf.post({}))
+            self.assertIsInstance(resp, JsonResponse, "should return JsonResponse")
+            d = json.loads(resp.content)
+            self.assertIn('error', d, "should contain error message")
+            self.assertEquals(d['error'], "Unauthorized")
+            self.assertIn('traceback', d, "should contain traceback")
+
+        resp = func(rf.get('base'))
+        self.assertIsInstance(resp, JsonResponse, "should return JsonResponse")
+        d = json.loads(resp.content)
+        self.assertIn('error', d, "should contain error message")
+        self.assertEquals(d['error'], 'The "list" method is not implemented.')

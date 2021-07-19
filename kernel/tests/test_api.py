@@ -6,38 +6,34 @@ from django.test import RequestFactory, TestCase
 from django.urls import path
 
 from accounts.models import User
-from ..apis import Preparer, QSencoder, ApiError, ApiBase
-from ..models import Identifier
+from ..api import Preparer, ApiError, ApiBase
 
 
 class TestPreparer(TestCase):
 
     def test_prepare(self):
-        d = {'barcode': 'barcode', 'linked_code': 'linked_code'}
+        d = {'username': 'username', 'email': 'email'}
 
         prep = Preparer(None)
         rc = prep.prepare(d)
         self.assertDictEqual(rc, d, "should return data unchanged")
 
-        id_dict = {'barcode': '1007', 'linked_code': 'UPC'}
-        id = Identifier(barcode=id_dict['barcode'],
-                        linked_code=id_dict['linked_code'])
+        usr_dict = {'username': 'dorothy', 'email': 'dot@kansas.gov'}
+        usr = User(username=usr_dict['username'],
+                   email=usr_dict['email'],
+                   password='rubySlippers')
         prep = Preparer(d)
-        rc = prep.prepare(id)
-        self.assertDictEqual(rc, id_dict)
-
-        rcd_dict = {'id': 100, 'identifier': id.get_absolute_url()}
-        rcd = {'id': rcd_dict['id'], 'identifier': id}
-        flds = {'id': 'id', 'identifier': 'identifier'}
-        rc = prep.prepare(rcd, flds)
-        self.assertDictEqual(rc, rcd_dict)
-        return
+        rc = prep.prepare(usr)
+        self.assertDictEqual(rc, usr_dict)
 
     def test_extract_data(self):
 
         class SimpleObject(object):
             count = 1
             result = object()
+
+            def get_absolute_url(self):
+                return '/base/0'
 
         class TestObject(object):
             options = {'first': 1, 'last': 99}
@@ -55,33 +51,14 @@ class TestPreparer(TestCase):
         self.assertIsNone(rc, "should handle null case")
         rc = prep.extract_data('say', to)
         self.assertEquals(rc, to.say(), "should return function result")
+        rc = prep.extract_data('child', to)
+        self.assertEquals(rc, to.child.get_absolute_url(),
+                          "should urlize value")
         # test parsing of dotted names
         rc = prep.extract_data('options.last', to)
         self.assertEquals(rc, 99, "should handle dictionary entries")
         rc = prep.extract_data('child.result.__class__', to)
         self.assertIsInstance(rc, object, "should handle multiple dot-levels")
-
-
-class TestQSencoder(TestCase):
-
-    def test_QSencoder(self):
-        jdp = {}
-        id = Identifier(barcode='000')
-        url = id.get_absolute_url()
-        result = json.dumps(id, cls=QSencoder, **jdp).strip('"')
-        self.assertEquals(result, url)
-
-        usr = User.objects.create_user(username='dorothy',
-                                       email='dot@kansas.gov',
-                                       is_active=True,
-                                       password='rubySlippers')
-        result = json.dumps(usr, cls=QSencoder, **jdp).strip('"')
-        self.assertEquals(result, '1')
-
-        now = date.today()
-        txt = now.isoformat()
-        result = json.dumps(now, cls=QSencoder, **jdp).strip('"')
-        self.assertEquals(result, txt)
 
 
 class TestApiError(TestCase):

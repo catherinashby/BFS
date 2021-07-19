@@ -66,22 +66,6 @@ class Preparer(object):
         return self.extract_data(remaining, value)
 
 
-class QSencoder(DjangoJSONEncoder):
-    """
-    JSONEncoder subclass that knows how to encode
-    instances (FKs and M2Ms)
-    as well as date/time, decimal types, and UUIDs.
-    """
-    def default(self, obj):
-        if hasattr(obj, '_meta'):
-            # possible keyField
-            if hasattr(obj, 'get_absolute_url'):
-                return obj.get_absolute_url()
-            pk = str(obj.pk) if hasattr(obj, 'pk') else None
-            return pk
-        return super().default(obj)
-
-
 class ApiError(Exception):
     msg = "Api Error"
 

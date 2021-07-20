@@ -49,7 +49,7 @@ class Identifier(models.Model):
         id = '{}{}'.format(val, check_digit(val))
         return id
 
-    def get_absolute_url(self):
+    def get_json_url(self):
         return reverse('identifier-detail', kwargs={'pk': self.pk})
 
     def __str__(self):

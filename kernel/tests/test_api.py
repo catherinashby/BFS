@@ -32,7 +32,7 @@ class TestPreparer(TestCase):
             count = 1
             result = object()
 
-            def get_absolute_url(self):
+            def get_json_url(self):
                 return '/base/0'
 
         class TestObject(object):
@@ -52,7 +52,7 @@ class TestPreparer(TestCase):
         rc = prep.extract_data('say', to)
         self.assertEquals(rc, to.say(), "should return function result")
         rc = prep.extract_data('child', to)
-        self.assertEquals(rc, to.child.get_absolute_url(),
+        self.assertEquals(rc, to.child.get_json_url(),
                           "should urlize value")
         # test parsing of dotted names
         rc = prep.extract_data('options.last', to)

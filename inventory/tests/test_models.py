@@ -29,7 +29,7 @@ class IdentifierTest(TestCase):
         result = Identifier.make_item_id()
         self.assertEquals(result, '1000015')
 
-    def test_get_absolute_url(self):
+    def test_get_json_url(self):
         id = Identifier(barcode='123')
-        result = id.get_absolute_url()
+        result = id.get_json_url()
         self.assertEquals(result, '/inventory/identifier/123')

@@ -1,9 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse
 from django.template.response import TemplateResponse
 
 from .models import Identifier
-from .apis import QSencoder
 
 
 @login_required
@@ -27,5 +27,5 @@ def prepare(inst, cf):
 def identifier_detail(request, pk):
     one = Identifier.idents.get(barcode=pk)
     fields = prepare(one, one._meta.concrete_fields)
-    resp = JsonResponse(fields, encoder=QSencoder)
+    resp = JsonResponse(fields, encoder=DjangoJSONEncoder)
     return resp

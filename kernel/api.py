@@ -58,8 +58,8 @@ class Preparer(object):
 
         if not remaining:
             # See if it needs to be urlized
-            if hasattr(value, 'get_absolute_url'):
-                value = value.get_absolute_url()
+            if hasattr(value, 'get_json_url'):
+                value = value.get_json_url()
             return value
 
         # There's more to lookup, so dive in recursively.

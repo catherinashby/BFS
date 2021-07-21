@@ -1,2 +1,3 @@
 coverage>=5.5
 Django==3.2.4
+restless>=2.1

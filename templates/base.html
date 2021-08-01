@@ -11,8 +11,9 @@
   <title>{% block title %}{{ site_name }}{% endblock title %}</title>
   <link rel="shortcut icon" type="image/png" href="{% static 'common/img/BFS_spool.png' %}"/>
 {% block fontspace %}{% endblock fontspace %}
- <link rel="stylesheet" type="text/css" href="{% static 'common/css/minimum.css' %}" />
+  <link rel="stylesheet" type="text/css" href="{% static 'common/css/minimum.css' %}" />
   <link rel="stylesheet" type="text/css" href="{% static 'common/css/style.css' %}" />
+{% block linkspace %}{% endblock linkspace %}
   <style type="text/css" >{% block styles %}{% endblock %}</style>
   <script src="{% static 'common/js/starter.js' %}"></script>
 {% block scripts %}{% endblock scripts %}

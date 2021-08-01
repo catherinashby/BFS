@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block title %}qUnit Tests{% endblock title %}
+
+{% block linkspace %}
+  <link rel="stylesheet" type="text/css" href="{% static 'common/css/qunit.css' %}" />
+{% endblock linkspace %}
+
+{% block scripts %}
+  <script src="{% static 'common/js/blanket.js' %}" data-cover-flags="debug"></script>
+  <script src="{% static 'common/js/qunit.js' %}"></script>
+{% endblock scripts %}
+
+{% block header %}
+{# include css and js library files (e.g., backbone) here #}
+
+{# replace this script with the file to be tested #}
+  <script>
+  function add(a, b) {
+    return a + b;
+  }
+</script>
+{# replace this script with the file containing the qUnit tests #}
+<script>
+  QUnit.module('add', function() {
+    QUnit.test('should add two numbers', function(assert) {
+      assert.equal(add(1, 1), 2);
+    });
+  });
+</script>
+{% endblock header %}
+
+{% block contents %}
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+{% endblock contents %}
+
+{% block footer %}{% endblock footer %}

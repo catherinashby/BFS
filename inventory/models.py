@@ -49,5 +49,24 @@ class Identifier(models.Model):
         id = '{}{}'.format(val, check_digit(val))
         return id
 
+    def urlize(self):
+        return reverse('identifier-detail', kwargs={'pk': self.barcode})
+
     def __str__(self):
         return '{}'.format(self.barcode)
+
+    class Meta:
+        ordering = ['barcode']
+
+
+class Location(models.Model):
+    identifier = models.OneToOneField(Identifier, on_delete=models.CASCADE,
+                                      primary_key=True)
+    name = models.CharField(max_length=32, unique=True)
+    description = models.CharField(max_length=64, null=True, blank=True)
+
+    def __str__(self):
+        return '{}'.format(self.name)
+
+    class Meta:
+        ordering = ['identifier']

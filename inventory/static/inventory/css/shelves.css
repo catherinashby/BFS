@@ -1,0 +1,51 @@
+    main    {
+        background-color: #f8f8ff; /* Ghost White */
+        padding: 1vh 1vw;
+        }
+    #wrapper    { background-color: white;
+        margin: 0 auto;
+        max-width: 1000px;
+        }
+    #wrapper div.bodyspace  {
+        border: thin solid black;
+        }
+    #wrapper div.noContent  {
+        padding: 20vh 0;
+        text-align: center;
+        }
+    #wrapper div.topline,
+    #wrapper div.bottomline {
+        padding: 2vh 2vw;
+        }
+    #wrapper div.topline    {
+        text-align: right;
+        }
+    #wrapper div.bottomline button  {
+        cursor: pointer;
+        }
+    #wrapper div.location   {
+        border: thin solid black;
+        padding: 1vh 1vw;
+        }
+    #wrapper div.grid   {
+        display: grid;
+        grid-template-columns: 60px 4em 1fr 60px;
+        }
+    #wrapper div.grid span  {
+        padding: 2px 5px; margin: 2px 10px;
+        }
+    #wrapper div.grid span.btn   {
+        background-color: #efefef;
+        border: thin solid black;
+        border-radius: 4px;
+        cursor: pointer;
+        }
+    #wrapper div.grid span.btn[title="Cancel"]   {
+        margin: 3px 0;
+        }
+    #wrapper div.desc   {
+        padding: 1vh 1vw; margin: 1vh 1vw;
+        }
+    #wrapper div.desc textarea  {
+        width: 90%;
+        }

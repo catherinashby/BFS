@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+  {% load static %}
+  {% block linkspace %}  <link rel="stylesheet" type="text/css"
+        href="{% static 'inventory/css/shelves.css' %}" />{% endblock %}
+  {% block styles %}
+    footer div {
+        text-align: center;
+        }
+  {% endblock %}
+  {% block scripts %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+  <script src="{% static 'inventory/js/shelves.js' %}"></script>
+  {% endblock %}
+  {% block contents %}
+    <div id="wrapper">
+      <div class="topline">{% include "pager.htm" %}</div>
+      <div class="bodyspace">
+      </div>    <!-- end of 'div.bodyspace' -->
+      <div class="bottomline">
+        <button type="button" title="Add">Add</button>
+      </div>
+    </div>
+    <template id="showBox">
+          <div class="grid">
+            <span class="btn" title="Edit">Edit</span>
+            <span><%= barcode %></span>
+            <span><%= name %></span>
+            <span class="btn" title="Print">Print</span>
+          </div>
+          <div class="desc"><%= description %></div>
+    </template>
+    <template id="editBox">
+          <div class="grid">
+            <span class="btn" title="Save">Save</span>
+            <span class="bc"><%= barcode %></span>
+  		    <input type="text" value="<%= name %>"
+                title="Name of this location" />
+          </div>
+          <div class="grid">
+            <span class="btn" title="Cancel">Cancel</span>
+          </div>
+          <div class="desc">
+            <textarea rows="2" title="Description (optional)"><%= description %></textarea>
+          </div>
+    </template>
+  {% endblock %}
+  {% block footer %}
+    <div>This space intentionally left blank.</div>
+      <script>
+      var items = [{% for loc in page_obj %}
+        { 'name': "{{ loc.name }}", 'barcode': "{{ loc.identifier.barcode }}", 'description': "{{ loc.description|default_if_none:'' }}", 'locID': "{{ loc.identifier.urlize }}" },{% endfor %}]
+      var stop = "here";
+      var sV = new app.shelvesView(items);
+      </script>
+  {% endblock %}

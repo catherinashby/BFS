@@ -28,7 +28,11 @@
   {% block contents %}
     <div class="box">
     {% if perms.inventory %}
-      <div class="square"><div class="content">Shelves</div></div>
+      <div class="square">
+        <a href="{% url 'shelves' %}">
+          <div class="content">Shelves</div>
+        </a>
+      </div>
       <div class="square"><div class="content">Stock</div></div>
       <div class="square"><div class="content">Register</div></div>
     {% endif %}

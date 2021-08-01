@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ..models import Identifier
+from ..models import Identifier, Location
 
 
 class IdentifierTest(TestCase):
@@ -28,3 +28,12 @@ class IdentifierTest(TestCase):
         Identifier.idents.create(barcode='1000002')
         result = Identifier.make_item_id()
         self.assertEquals(result, '1000015')
+
+
+class LocationTest(TestCase):
+
+    def test_name(self):
+        name = 'Top Shelf'
+        loc = Location(name=name)
+        lbl = '{}'.format(loc)
+        self.assertEqual(lbl, loc.name)

@@ -36,7 +36,7 @@ app.locationView = Backbone.View.extend({
     showTemplate: null,
     events: {
         'click span.btn[title="Cancel"]': 'cancelChange',
-        'click span.btn[title="Edit"]': 'renderEdit',
+        'click span.btn[title="Edit"]': 'editLocation',
         'click span.btn[title="Print"]': 'printLocation',
         'click span.btn[title="Save"]': 'saveChange',
     },
@@ -51,6 +51,15 @@ app.locationView = Backbone.View.extend({
         } else {    // was editing a known location
             this.render();
         }
+    },
+    editLocation: function ()   {
+        var editing = this.el.parentElement.querySelector('span.btn[title="Save"]');
+        if (editing)   return;
+
+        var lv = this.renderEdit();
+        fld = lv.el.querySelector("input");
+        fld.focus();
+        return;
     },
     printLocation: function()    {
         var bc = this.model.get('barcode')

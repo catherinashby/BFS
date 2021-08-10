@@ -40,6 +40,9 @@
         border-radius: 4px;
         cursor: pointer;
         }
+    #wrapper div.grid span.btn:focus   {
+        border-width: medium;
+        }
     #wrapper div.grid span.btn[title="Cancel"]   {
         margin: 3px 0;
         }

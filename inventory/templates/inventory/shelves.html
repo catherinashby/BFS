@@ -33,25 +33,27 @@
     </template>
     <template id="editBox">
           <div class="grid">
-            <span class="btn" title="Save">Save</span>
+            <span class="btn" title="Save" tabindex="0">Save&nbsp;</span>
             <span class="bc"><%= barcode %></span>
-  		    <input type="text" value="<%= name %>"
+  		    <input type="text" value="<%= name %>" tabindex="1"
                 title="Name of this location" />
           </div>
           <div class="grid">
-            <span class="btn" title="Cancel">Cancel</span>
+            <span class="btn" title="Cancel" tabindex="0">Cancel</span>
           </div>
           <div class="desc">
-            <textarea rows="2" title="Description (optional)"><%= description %></textarea>
+            <textarea rows="2" tabindex="2"
+                title="Description (optional)"><%= description %></textarea>
           </div>
     </template>
   {% endblock %}
   {% block footer %}
-    <div>This space intentionally left blank.</div>
+    <div>
       <script>
       var items = [{% for loc in page_obj %}
         { 'name': "{{ loc.name }}", 'barcode': "{{ loc.identifier.barcode }}", 'description': "{{ loc.description|default_if_none:'' }}", 'locID': "{{ loc.identifier.urlize }}" },{% endfor %}]
       var stop = "here";
       var sV = new app.shelvesView(items);
       </script>
+    </div>
   {% endblock %}

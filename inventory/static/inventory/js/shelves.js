@@ -62,9 +62,6 @@ app.locationView = Backbone.View.extend({
         return;
     },
     printLocation: function()    {
-        var bc = this.model.get('barcode')
-        // locid = /identifier/<int:pk>
-        // GET /inventory/api/identifier/<int:pk>
         this.model.save(null, {'patch':true,'wait':true});
         return
     },

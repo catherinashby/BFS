@@ -6,11 +6,13 @@
 
 {% block linkspace %}
   <link rel="stylesheet" type="text/css" href="{% static 'common/css/qunit.css' %}" />
+{% block more_css %}{% endblock more_css %}
 {% endblock linkspace %}
 
 {% block scripts %}
   <script src="{% static 'common/js/blanket.js' %}" data-cover-flags="debug"></script>
   <script src="{% static 'common/js/qunit.js' %}"></script>
+{% block more_js %}{% endblock more_js %}
 {% endblock scripts %}
 
 {% block header %}

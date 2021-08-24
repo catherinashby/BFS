@@ -40,16 +40,64 @@ app.locationView = Backbone.View.extend({
         'click span.btn[title="Print"]': 'printLocation',
         'click span.btn[title="Save"]': 'saveChange',
     },
+    validations: {
+        'name': function(val) {
+            let str = val.trim();
+            if ( str.length < 1 )   {
+                return "This is a required field"
+            }
+            return;
+        }
+    },
     initialize: function () {
         this.listenTo(this.model, 'change', this.render);
         return;
     },
+    checkForm: function()    {
+        var errs = false;
+        var changes = {};
+        var mdl = this.model;
+        var tests = this.validations;
+        var data = this.el.querySelectorAll('input,textarea');
+        data.forEach( function(elem) {
+            // does it have a name?
+            if ( !elem.name )  return;
+            // does the name have a validation?
+            if ( elem.name in tests )    {
+                let dest = elem.parentElement.querySelector('div.error');
+                let checker = tests[elem.name];
+                let msg = checker( elem.value );
+                if ( msg )  {
+                    errs = true;
+                    dest.textContent = msg;
+                    elem.classList.add('invalid');
+                    elem.setAttribute( 'data-error', msg );
+                } else {
+                    dest.textContent = "";
+                    elem.classList.remove('invalid');
+                    elem.removeAttribute( 'data-error' );
+                }
+            }
+            // does the name match an attribute?
+            if ( elem.name in mdl.attributes ) {
+                let value = mdl.get( elem.name );
+                // do the values match?
+                if ( value != elem.value )  {
+                    changes[ elem.name ] = elem.value;
+                }
+            }
+        });
+        if ( errs ) {  // don't return data if errors occurred
+            changes = null;
+        }
+        return changes;
+    },
     cancelChange: function()    {
         var bc = this.model.get('barcode');
-        if ( bc == "" ) {   // was adding a new location
-            this.close();
-        } else {    // was editing a known location
+        if ( bc )   {    // was editing a known location
             this.render();
+        } else {        // was adding a new location
+            this.close();
         }
     },
     editLocation: function ()   {
@@ -66,10 +114,9 @@ app.locationView = Backbone.View.extend({
         return
     },
     saveChange: function()    {
-        var bc = this.model.get('barcode');
-        var name = this.el.querySelector('input').value;
-        var desc = this.el.querySelector('textarea').value;
-        this.model.set({'name': name, 'description': desc});
+        var changes = this.checkForm();
+        if ( !changes )  return;
+        this.model.set(changes);
         if ( this.model.isNew() ) {
             this.collection.add(this.model);
         }
@@ -149,6 +196,4 @@ app.shelvesView = Backbone.View.extend({
         this.body.appendChild( lv.el );
     }
 });
-//
-var stop = "here";
 //

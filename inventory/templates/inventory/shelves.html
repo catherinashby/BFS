@@ -23,27 +23,33 @@
       </div>
     </div>
     <template id="showBox">
-          <div class="grid">
-            <span class="btn" title="Edit">Edit</span>
-            <span><%= barcode %></span>
-            <span><%= name %></span>
-            <span class="btn" title="Print">Print</span>
+          <div class="databox">
+            <div class="fields">
+              <span><%= barcode %></span>
+              <span><%= name %></span>
+              <span class="btn" title="Print">Print</span>
+              <div class="desc"><%= description %></div>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Edit">Edit</span>
+            </div>
           </div>
-          <div class="desc"><%= description %></div>
     </template>
     <template id="editBox">
-          <div class="grid">
-            <span class="btn" title="Save" tabindex="0">Save&nbsp;</span>
-            <span class="bc"><%= barcode %></span>
-  		    <input type="text" value="<%= name %>" tabindex="1"
-                title="Name of this location" />
-          </div>
-          <div class="grid">
-            <span class="btn" title="Cancel" tabindex="0">Cancel</span>
-          </div>
-          <div class="desc">
-            <textarea rows="2" tabindex="2"
-                title="Description (optional)"><%= description %></textarea>
+          <div class="databox">
+            <div class="fields">
+              <span><%= barcode %></span>
+    		  <input type="text" size="32" maxlength="32" name="name"
+                     placeholder="Name of this location"
+                     value="<%= name %>" />
+              <div class="error"></div>
+              <textarea rows="2" maxlength="64" name="description"
+                  placeholder="Description (optional)"><%= description %></textarea>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Save" tabindex="0">Save</span>
+              <span class="btn" title="Cancel" tabindex="0">Cancel</span>
+            </div>
           </div>
     </template>
   {% endblock %}

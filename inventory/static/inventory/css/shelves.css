@@ -27,28 +27,54 @@
         border: thin solid black;
         padding: 1vh 1vw;
         }
-    #wrapper div.grid   {
-        display: grid;
-        grid-template-columns: 60px 4em 1fr 60px;
+    #wrapper div.databox   {
+        display: flow-root;
+        max-width: 40em;
+        margin: 0 auto;
         }
-    #wrapper div.grid span  {
-        padding: 2px 5px; margin: 2px 10px;
+    #wrapper  div.databox div.buttons    {
+        display: inline-block;
+        float: left;
+        width: 4em;
+        padding: 1vh 0;
         }
-    #wrapper div.grid span.btn   {
-        background-color: #efefef;
-        border: thin solid black;
-        border-radius: 4px;
-        cursor: pointer;
-        }
-    #wrapper div.grid span.btn:focus   {
-        border-width: medium;
-        }
-    #wrapper div.grid span.btn[title="Cancel"]   {
-        margin: 3px 0;
+    #wrapper div.databox div.fields    {
+        width: calc(100% - 4.25em); /* width of 'buttons' column, and a bit */
+        float: right;
         }
     #wrapper div.desc   {
         padding: 1vh 1vw; margin: 1vh 1vw;
         }
-    #wrapper div.desc textarea  {
-        width: 90%;
+    #wrapper div.databox div.fields input    {
+        margin-left: 1em;
+        }
+    #wrapper div.databox div.fields input.invalid   {
+        border-color: crimson;
+        }
+    #wrapper div.databox div.fields textarea    {
+        width: 95%;
+        margin: 1vh 1em;
+        }
+    #wrapper div.fields div.error   { background-color: lightpink;
+        text-align: center;
+        }
+    #wrapper span  {
+        padding: 2px 5px; margin: 2px 10px;
+        }
+    #wrapper span.btn   {
+        display: inline-block;
+        background-color: #efefef;
+        border: thin solid black;
+        border-radius: 6px;
+        padding: 0.5ex 0.5em;
+        cursor: pointer;
+        }
+    #wrapper span.btn:focus   {
+        border-width: medium;
+        }
+    #wrapper span.btn[title="Print"]    {
+        float: right;
+        }
+    #wrapper span.btn[title="Cancel"]    {
+        margin-top: 12px;
         }

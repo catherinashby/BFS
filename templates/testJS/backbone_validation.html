@@ -1,0 +1,157 @@
+{% extends "qUnit_base.html" %}
+{% load static %}
+
+{% block header %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+{# the script to be tested #}
+  <script src="{% static 'common/js/backbone.validation.js' %}" data-cover></script>
+
+{# replace this script with the file containing the qUnit tests #}
+<script>
+  var bb_val = Backbone.Validation.validators;
+  var a_form = `
+          <div class="databox">
+            <div class="fields">
+    		  <input type="text" size="32" maxlength="32" name="name"
+                     placeholder="Name of this location"
+                     value="<%= name %>" />
+    		  <input type="text" size="64" maxlength="64" name="email"
+                     placeholder="email address"
+                     value="<%= email %>" />
+    		  <input type="number" size="2" maxlength="2" name="age"
+                     value="<%= age %>" />
+              <textarea rows="2" maxlength="64"
+                  placeholder="Description (optional)">test subject #1</textarea>
+            </div>
+          </div>
+  `;
+  var a_template = _.template( a_form );
+
+  QUnit.module('validators', function() {
+    QUnit.test('required', function(assert) {
+      assert.true(bb_val.required('OK'), 'non-empty string');
+      assert.false(bb_val.required(''), 'empty string');
+    });
+    QUnit.test('min', function(assert) {
+      assert.true(bb_val.min(47, 5), '47 is greater than 5');
+      assert.false(bb_val.min(27, 50), '27 is not greater than 50');
+    });
+    QUnit.test('max', function(assert) {
+      assert.true(bb_val.max(47, 53), '47 is less than 53');
+      assert.false(bb_val.max(27, 15), '27 is not less than 15');
+    });
+    QUnit.test('range', function(assert) {
+        assert.true(bb_val.range(25, 10, 50), '25 is between 10 and 50');
+        assert.false(bb_val.range(75, 10, 50), '75 is not between 10 and 50');
+    });
+    QUnit.test('length', function(assert) {
+        assert.true(bb_val.length('length', 6), '"length" is 6 chars long');
+        assert.false(bb_val.length('size', 6), '"size" is not 6 chars long');
+    });
+    QUnit.test('minLength', function(assert) {
+        assert.true(bb_val.minLength('random string', 5),
+                    '"random string" is longer than 5 chars');
+        assert.false(bb_val.minLength('data', 5),
+                     '"data" is not longer than 5 chars');
+    });
+    QUnit.test('maxLength', function(assert) {
+        assert.true(bb_val.maxLength('random string', 25),
+                    '"random string" is shorter than 25 chars');
+        assert.false(bb_val.maxLength('random string', 5),
+                     '"random string" is not shorter than 5 chars');
+    });
+    QUnit.test('rangeLength', function(assert) {
+        assert.true(bb_val.maxLength('random string', 25),
+                    '"random string" is shorter than 25 chars');
+        assert.false(bb_val.maxLength('random string', 5),
+                    '"random string" is not shorter than 5 chars');
+    });
+    QUnit.test('oneOf', function(assert) {
+        assert.true(bb_val.oneOf('three', [ 'one', 'three', 'five', 'seven']),
+                    '"three" was found in the list');
+        assert.false(bb_val.oneOf('ten', [ 'one', 'three', 'five', 'seven']),
+                     '"ten" was not found in the list');
+    });
+    QUnit.test('pattern', function(assert) {
+        assert.true(bb_val.pattern('03391', 'digits'),
+                    '"03391" contains only digits');
+        assert.false(bb_val.pattern('O339l', 'digits'),
+                     '"03391" does not contain only digits');
+        let phone = /^(\(?(\d{3})\)?[- ]?)?(\d{3})[- ]?(\d{4})$/;
+        assert.true(bb_val.pattern('(609) 577-4392', phone),
+                     '"(609) 577-4392" looks like a phone number');
+        assert.true(bb_val.pattern('402 8999', phone),
+                     '"402 8999" looks like a phone number');
+    });
+  });
+//
+  QUnit.module('checkForm function', function() {
+    function makeForm( data ) {
+      var empty_form = a_template( data );
+      var a_fixture = document.getElementById('qunit-fixture');
+      a_fixture.innerHTML = empty_form;
+      var inputs = a_fixture.querySelectorAll('input,select,textarea');
+      return inputs;
+    }
+    var TestModel = Backbone.Model.extend({
+      defaults: {
+          'name': null,
+          'email': null,
+          'age': null
+          }
+      });
+    let rules = {
+        'name': { 'name': 'required', 'message': 'A name is required.' },
+        'email': [ { 'name': 'required', 'message': 'An email address is required.' },
+                   { 'name': 'email', 'message': 'Please enter a valid email address.' }
+                 ],
+        'age': { 'name': 'min', 'args': [ 16 ],
+                 'message': 'You must be at least sixteen years old.' }
+        };
+    QUnit.test('no validation, no model', function(assert) {
+      let fields = makeForm({'name':'','email':'','age':''});
+      let a_rc = Backbone.Validation.checkForm({}, fields);
+      assert.deepEqual(a_rc, {}, 'checkForm() returned an empty object');
+    });
+    QUnit.test('no validation, with model', function(assert) {
+      let model = new TestModel();
+      let data = { 'name':'Terezen',
+                   'email':'terezen@my.site.org',
+                   'age':'25'};
+      let fields = makeForm( data );
+      let a_rc = Backbone.Validation.checkForm({}, fields, model);
+      assert.deepEqual(a_rc, data, 'checkForm() returned a data object');
+    });
+    QUnit.test('validation, no model', function(assert) {
+      let fields = makeForm({'name':'Terezen','email':'','age':25});
+      let a_rc = Backbone.Validation.checkForm(rules, fields);
+      assert.notOk( a_rc, 'nothing is returned if there are errors' );
+      var errors = {};
+      fields.forEach(function(fld) {
+        if ( 'error' in fld.dataset )  {
+          errors[ fld.name ] = fld.dataset.error;
+        }
+      });
+      assert.true( ('email' in errors), 'one error: email');
+    });
+    QUnit.test('validation, with model', function(assert) {
+      let model = new TestModel();
+      let data = { 'name':'Terezen',
+                   'email':'terezen@my.site.org',
+                   'age':'25'};
+      let fields = makeForm( data );
+      let a_rc = Backbone.Validation.checkForm(rules, fields, model);
+      assert.deepEqual(a_rc, data, 'checkForm() returned a data object');
+      var errors = {};
+      fields.forEach(function(fld) {
+        if ( 'error' in fld.dataset )  {
+          errors[ fld.name ] = fld.dataset.error;
+        }
+      });
+      assert.deepEqual( errors, {}, 'no errors found');
+    });
+  });
+</script>
+{% endblock header %}

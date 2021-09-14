@@ -41,55 +41,19 @@ app.locationView = Backbone.View.extend({
         'click span.btn[title="Save"]': 'saveChange',
     },
     validations: {
-        'name': function(val) {
-            let str = val.trim();
-            if ( str.length < 1 )   {
-                return "This is a required field"
-            }
-            return;
-        }
+        'name': { 'name': 'required', 'message': 'A name is required.' }
     },
     initialize: function () {
         this.listenTo(this.model, 'change', this.render);
         return;
     },
     checkForm: function()    {
-        var errs = false;
-        var changes = {};
-        var mdl = this.model;
-        var tests = this.validations;
         var data = this.el.querySelectorAll('input,textarea');
-        data.forEach( function(elem) {
-            // does it have a name?
-            if ( !elem.name )  return;
-            // does the name have a validation?
-            if ( elem.name in tests )    {
-                let dest = elem.parentElement.querySelector('div.error');
-                let checker = tests[elem.name];
-                let msg = checker( elem.value );
-                if ( msg )  {
-                    errs = true;
-                    dest.textContent = msg;
-                    elem.classList.add('invalid');
-                    elem.setAttribute( 'data-error', msg );
-                } else {
-                    dest.textContent = "";
-                    elem.classList.remove('invalid');
-                    elem.removeAttribute( 'data-error' );
-                }
-            }
-            // does the name match an attribute?
-            if ( elem.name in mdl.attributes ) {
-                let value = mdl.get( elem.name );
-                // do the values match?
-                if ( value != elem.value )  {
-                    changes[ elem.name ] = elem.value;
-                }
-            }
-        });
-        if ( errs ) {  // don't return data if errors occurred
-            changes = null;
-        }
+        var changes = Backbone.Validation.checkForm( this.validations, data, this.model );
+        var src = this.el.querySelector( 'input.invalid' );
+        var dest = this.el.querySelector('div.error');
+        var msg = src ? src.getAttribute( 'data-error' ): '';
+        dest.innerHTML = msg;
         return changes;
     },
     cancelChange: function()    {
@@ -115,10 +79,14 @@ app.locationView = Backbone.View.extend({
     },
     saveChange: function()    {
         var changes = this.checkForm();
-        if ( !changes )  return;
+        if ( !changes )  return;            //  errors found
+        if ( !Object.keys(changes).length )  {  //  no errors, but no changes
+          this.cancelChange();
+          return;
+        }
         this.model.set(changes);
         if ( this.model.isNew() ) {
-            this.collection.add(this.model);
+          this.collection.add(this.model);
         }
         this.model.save( null, null, {'wait': true});
         return;

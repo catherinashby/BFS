@@ -70,3 +70,22 @@ class Location(models.Model):
 
     class Meta:
         ordering = ['identifier']
+
+
+class Supplier(models.Model):
+    #   id
+    name = models.CharField(max_length=64, unique=True)
+    street = models.CharField(max_length=64, null=True, blank=True)
+    street_ext = models.CharField(max_length=64, null=True, blank=True)
+    city = models.CharField(max_length=32, null=True, blank=True)
+    state = models.CharField(max_length=16, null=True, blank=True)
+    zip5 = models.CharField(max_length=5, null=True, blank=True)
+    phone_1 = models.CharField(max_length=16, null=True, blank=True)
+    phone_2 = models.CharField(max_length=16, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return '{}'.format(self.name)
+
+    class Meta:
+        ordering = ['id']

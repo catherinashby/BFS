@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
-from ..models import Identifier, Location
+from ..models import Identifier, Location, Supplier
 
 
 @contextmanager
@@ -140,4 +140,61 @@ class LocationResourceTest(TestCase):
             self.assertEquals(output,
                               'Printing barcode label for Location "Basket 1"\n',
                               "Expected dummy print statement")
+        return
+
+
+class SupplierResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           is_superuser=True,
+                                           password='rubySlippers')
+        cls.sup1 = Supplier.objects.create(name='Choice Fabrics')
+        cls.sup2 = Supplier.objects.create(name='Fabric Mart')
+
+    def test_list(self):
+        url = reverse('supplier-list')
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        for each in d['objects']:
+            self.assertIn('name', each, "should have name field")
+
+    def test_detail(self):
+        pk = 2
+        url = reverse('supplier-detail', kwargs={'pk': pk})
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, 200, "should return a supplier")
+        d = json.loads(response.content)
+        self.assertIn('name', d, "key field missing")
+
+    def test_create(self):
+        url = reverse('supplier-list')
+        response = self.client.post(url, {'name': 'Foust Textiles'},
+                                    content_type="application/json")
+        self.assertEquals(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {'name': 'Foust Textiles',
+                                          'city': 'Kings Mountain',
+                                          'state': 'North Carolina',
+                                          'zip5': '28086'},
+                                    content_type="application/json")
+        self.assertEquals(response.status_code, 201, "should return 'Created'")
+
+    def test_update(self):
+        pk = 1
+        change = json.dumps({'city': 'Nashua', 'state': 'New Hampshire'})
+        url = reverse('supplier-detail', kwargs={'pk': pk})
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
         return

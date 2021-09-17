@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+  {% load static %}
+  {% block linkspace %}  <link rel="stylesheet" type="text/css"
+        href="{% static 'inventory/css/suppliers.css' %}" />{% endblock %}
+  {% block styles %}
+    footer div {
+        text-align: center;
+        }
+  {% endblock %}
+  {% block scripts %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+  <script src="{% static 'common/js/backbone.validation.js' %}"></script>
+  <script src="{% static 'inventory/js/suppliers.js' %}"></script>
+  {% endblock %}
+  {% block contents %}
+    <div id="wrapper">
+      <div class="topline">{% include "pager.htm" %}</div>
+      <div class="bodyspace">
+      </div>    <!-- end of 'div.bodyspace' -->
+      <div class="bottomline">
+        <button type="button" title="Add">Add</button>
+      </div>
+    </div>
+    <template id="showBox">
+          <div class="databox">
+            <div class="fields">
+              <span><%= name %></span>
+              <div class="notes"><%= notes %></div>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Edit">Edit</span>
+            </div>
+          </div>
+    </template>
+    <template id="editBox">
+          <div class="databox">
+            <div class="fields">
+              <div class="lines">
+                <input type="text" title="Name (required)" maxlength="64" value="<%= name %>"
+                       name="name" placeholder="Name (required)" required />
+                <div class="error"></div>
+                <input type="text" title="Street" maxlength="64" value="<%= street %>"
+                       name="street" placeholder="Street" />
+                <input type="text" title="Street 2" maxlength="64" value="<%= street_ext %>"
+                       name="street_ext" placeholder="Street 2" />
+              </div>
+              <div>
+                <input type="text" title="City" maxlength="32" value="<%= city %>"
+                       name="city" placeholder="City" />
+                <input type="text" title="State" size="12" maxlength="12" value="<%= state %>"
+                       name="state" placeholder="State" />
+                <input type="text" size="5" maxlength="5" value="<%= zip5 %>"
+                       title="Enter a five-digit numper"
+                       name="zip5" placeholder="Zip5" />
+                <div class="error"></div>
+              </div>
+              <div>
+                <input type="tel"  size="14" maxlength="16" value="<%= phone_1 %>"
+                       title="Enter a seven- or ten-digit number"
+                       name="phone_1" placeholder="(XXX) XXX-XXXX" />
+                <input type="tel" size="14" maxlength="16" value="<%= phone_2 %>"
+                       title="Enter a seven- or ten-digit number"
+                       name="phone_2" placeholder="(XXX) XXX XXXX" />
+                <div class="error"></div>
+              </div>
+              <textarea rows="2" title="Notes (optional)"
+                  name="notes"><%= notes %></textarea>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Save" tabindex="0">Save</span>
+              <span class="btn" title="Cancel" tabindex="0">Cancel</span>
+              <input type="hidden" value="none">
+            </div>
+          </div>
+    </template>
+  {% endblock %}
+  {% block footer %}
+    <div>
+      <script>
+      var items = [{% for who in page_obj %}
+        { 'id': "{{ who.id }}", 'name': "{{ who.name }}", 'street': "{{ who.street|default_if_none:'' }}", 'street_ext': "{{ who.street_ext|default_if_none:'' }}", 'city': "{{ who.city|default_if_none:'' }}", 'state': "{{ who.state|default_if_none:'' }}", 'zip5': "{{ who.zip5|default_if_none:'' }}", 'phone_1': "{{ who.phone_1|default_if_none:'' }}", 'phone_2': "{{ who.phone_2|default_if_none:'' }}", 'notes': "{{ who.notes|default_if_none:'' }}" },{% endfor %}]
+      var sV = new app.supplierListView(items);
+      </script>
+    </div>
+  {% endblock %}

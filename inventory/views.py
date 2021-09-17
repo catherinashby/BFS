@@ -4,7 +4,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse
 from django.template.response import TemplateResponse
 
-from .models import Identifier, Location
+from .models import Identifier, Location, Supplier
 
 
 @login_required
@@ -21,6 +21,19 @@ def shelves(request):
     template = "inventory/shelves.html"
 
     shelves = Location.objects.all()
+    paginator = Paginator(shelves, 25)  # Show 25 locations per page.
+    page_number = request.GET.get('page')
+    context['page_obj'] = paginator.get_page(page_number)
+
+    return TemplateResponse(request, template, context)
+
+
+@login_required
+def suppliers(request):
+    context = {}
+    template = "inventory/suppliers.html"
+
+    shelves = Supplier.objects.all()
     paginator = Paginator(shelves, 25)  # Show 25 locations per page.
     page_number = request.GET.get('page')
     context['page_obj'] = paginator.get_page(page_number)

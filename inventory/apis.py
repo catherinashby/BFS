@@ -4,7 +4,7 @@ import sys
 from restless.dj import DjangoResource
 from restless.preparers import FieldsPreparer
 
-from .models import Identifier, Location
+from .models import Identifier, Location, Supplier
 
 
 class BaseResource(DjangoResource):
@@ -113,3 +113,62 @@ class LocationResource(BaseResource):
         loc = Location.objects.get(identifier_id=pk)
         print('Printing barcode label for Location "{}"'.format(loc))
         return
+
+
+class SupplierResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'id': 'id',
+        'name': 'name',
+        'street': 'street',
+        'street_ext': 'street_ext',
+        'city': 'city',
+        'state': 'state',
+        'zip5': 'zip5',
+        'phone_1': 'phone_1',
+        'phone_2': 'phone_2',
+        'notes': 'notes'
+    })
+
+    def is_authenticated(self):
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_supplier')
+        return ok
+
+    # GET /api/supplier/
+    def list(self):
+        qs = Supplier.objects.all()
+        return qs
+
+    # GET /api/supplier/<pk>/
+    def detail(self, pk):
+        qs = Supplier.objects.get(id=pk)
+        return qs
+
+    # POST /api/supplier/
+    def create(self):
+
+        who = Supplier()
+
+        for fld in ['name', 'street', 'street_ext', 'city', 'state', 'zip5',
+                    'phone_1', 'phone_2', 'notes']:
+            val = self.data[fld] if fld in self.data else None
+            setattr(who, fld, val)
+
+        who.save()
+        return who
+
+    # PUT /api/supplier/<pk>/
+    def update(self, pk):
+
+        who = Supplier.objects.get(id=pk)
+
+        for fld in ['name', 'street', 'street_ext', 'city', 'state', 'zip5',
+                    'phone_1', 'phone_2', 'notes']:
+            val = self.data[fld] if fld in self.data else None
+            if val is not None:
+                setattr(who, fld, val)
+
+        who.save()
+        return who

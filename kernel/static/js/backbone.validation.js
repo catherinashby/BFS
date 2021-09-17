@@ -29,7 +29,7 @@ Backbone.Validation = (function () {
                      (_.isArray(value) && _.isEmpty(value)));
             };
         return {
-            required: function(value) {
+            required: function(value, bool) {
                 return hasValue(value);
                 },
             min: function(value, minValue) {
@@ -106,6 +106,7 @@ Backbone.Validation = (function () {
                 let msg = null;
                 tests.forEach( function( test ) {
                     if ( msg )  return;  // error already found
+                    if ( msg === undefined )  return;   // required:false
                     let checker = test.name;
                     if ( _.isString( checker ) ) {
                         checker = defaultValidators[ test.name ] || null;

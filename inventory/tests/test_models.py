@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ..models import Identifier, Location
+from ..models import Identifier, Location, Supplier
 
 
 class IdentifierTest(TestCase):
@@ -36,4 +36,13 @@ class LocationTest(TestCase):
         name = 'Top Shelf'
         loc = Location(name=name)
         lbl = '{}'.format(loc)
-        self.assertEqual(lbl, loc.name)
+        self.assertEqual(lbl, name)
+
+
+class SupplierTest(TestCase):
+
+    def test_name(self):
+        name = "Four-Dollar Fabric"
+        who = Supplier(name=name)
+        lbl = '{}'.format(who)
+        self.assertEqual(lbl, name)

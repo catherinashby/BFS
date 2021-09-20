@@ -89,3 +89,23 @@ class Supplier(models.Model):
 
     class Meta:
         ordering = ['id']
+
+
+class ItemTemplate(models.Model):
+    identifier = models.OneToOneField(Identifier, on_delete=models.CASCADE,
+                                      primary_key=True)
+    description = models.CharField(max_length=120)
+    brand = models.CharField(max_length=32, null=True, blank=True)
+    #   Hoffmann, Timeless Treasures, Moda, .... ; Prym, Clover, Dritz, ....
+    content = models.CharField(max_length=32, null=True, blank=True)
+    #   cotton, crepe de chine, jersey knit, .... ; book, notion, ....
+    part_unit = models.CharField(max_length=32, null=True, blank=True)
+    # by the yard, panel, 4 yd cut, .... ; unit, ....
+    yardage = models.BooleanField(default=True)
+    notes = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return '{}'.format(self.description)
+
+    class Meta:
+        ordering = ['identifier']

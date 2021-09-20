@@ -4,7 +4,7 @@ import sys
 from restless.dj import DjangoResource
 from restless.preparers import FieldsPreparer
 
-from .models import Identifier, Location, Supplier
+from .models import Identifier, Location, Supplier, ItemTemplate
 
 
 class BaseResource(DjangoResource):
@@ -172,3 +172,90 @@ class SupplierResource(BaseResource):
 
         who.save()
         return who
+
+
+class ItemTemplateResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'description': 'description',
+        'brand': 'brand',
+        'content': 'content',
+        'part_unit': 'part_unit',
+        'yardage': 'yardage',
+        'notes': 'notes',
+        'itmID': 'identifier.urlize',
+        'barcode': 'identifier_id',
+        'linked_code': 'identifier.linked_code'
+    })
+
+    def __init__(self, *args, **kwargs):
+        super(ItemTemplateResource, self).__init__(*args, **kwargs)
+
+        self.http_methods['detail'].update({
+                'PATCH': 'print_label',
+        })
+        return
+
+    def is_authenticated(self):
+        if self.request.method in {'GET', 'PATCH'}:
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_itemtemplate')
+        return ok
+
+    # GET /api/item/
+    def list(self):
+        qs = ItemTemplate.objects.all()
+        return qs
+
+    # GET /api/item/<pk>/
+    def detail(self, pk):
+        qs = ItemTemplate.objects.get(identifier_id=pk)
+        return qs
+
+    # POST /api/item/
+    def create(self):
+
+        item = ItemTemplate()
+
+        for fld in ['description', 'brand', 'content',
+                    'part_unit', 'yardage', 'notes']:
+            val = self.data[fld] if fld in self.data else None
+            setattr(item, fld, val)
+
+        upc = self.data['linked_code'] if 'linked_code' in self.data else ''
+        bc = Identifier.make_item_id()
+        id = Identifier.itemIDs.create(barcode=bc)
+        if upc:
+            setattr(id, 'linked_code', upc)
+            id.save()
+        setattr(item, 'identifier', id)
+
+        item.save()
+        return item
+
+    # PUT /api/item/<pk>/
+    def update(self, pk):
+
+        upc = self.data['linked_code'] if 'linked_code' in self.data else ''
+        if upc:
+            bc = Identifier.itemIDs.get(barcode=pk)
+            if not bc.linked_code == upc:
+                setattr(bc, 'linked_code', upc)
+                bc.save()
+
+        item = ItemTemplate.objects.get(identifier_id=pk)
+
+        for fld in ['description', 'brand', 'content',
+                    'part_unit', 'yardage', 'notes']:
+            val = self.data[fld] if fld in self.data else None
+            if val is not None:
+                setattr(item, fld, val)
+
+        item.save()
+        return item
+
+    def print_label(self, pk):
+
+        item = ItemTemplate.objects.get(identifier_id=pk)
+        print('Printing barcode label for Item "{}"'.format(item))
+        return

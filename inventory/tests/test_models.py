@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ..models import Identifier, Location, Supplier
+from ..models import Identifier, Location, Supplier, ItemTemplate
 
 
 class IdentifierTest(TestCase):
@@ -46,3 +46,12 @@ class SupplierTest(TestCase):
         who = Supplier(name=name)
         lbl = '{}'.format(who)
         self.assertEqual(lbl, name)
+
+
+class ItemTemplateTest(TestCase):
+
+    def test_name(self):
+        desc = 'Apple A Day Cotton Fabric'
+        itm = ItemTemplate(description=desc)
+        lbl = '{}'.format(itm)
+        self.assertEqual(lbl, itm.description)

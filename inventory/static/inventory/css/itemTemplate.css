@@ -1,0 +1,87 @@
+    main    {
+        background-color: #f8f8ff; /* Ghost White */
+        padding: 1vh 1vw;
+        }
+    #wrapper    { background-color: white;
+        margin: 0 auto;
+        max-width: 1000px;
+        }
+    #wrapper div.bodyspace  {
+        border: thin solid black;
+        }
+    #wrapper div.noContent  {
+        padding: 20vh 0;
+        text-align: center;
+        }
+    #wrapper div.topline,
+    #wrapper div.bottomline {
+        padding: 2vh 2vw;
+        }
+    #wrapper div.topline    {
+        text-align: right;
+        }
+    #wrapper div.bottomline button  {
+        cursor: pointer;
+        }
+    #wrapper div.itemTemplate   {
+        border: thin solid black;
+        padding: 1vh 2vw;
+        }
+    #wrapper div.itemTemplate div.databox   {
+        display: flow-root;
+        max-width: 40em;
+        margin: 0 auto;
+        }
+    #wrapper div.databox div.buttons    {
+        display: inline-block;
+        float: left;
+        width: 5em;
+        padding: 1vh 0;
+        }
+    #wrapper div.databox div.fields    {
+        width: calc(100% - 5.25em); /* width of 'buttons' column, and a bit */
+        float: right;
+        }
+    #wrapper input[name="linked_code"] {
+        max-width: 14em;
+    }
+    #wrapper div.desc   {
+        padding: 1vh 1vw; margin: 1vh 1vw;
+        }
+    #wrapper div.databox div.fields label   {
+        display: inline-block;
+        min-width: 80px;
+        text-align: right;
+        }
+    #wrapper div.fields div.lines input  {
+        width: calc(100% - 100px); /* width of label, and a bit */
+        }
+    #wrapper div.fields input, textarea   {
+        margin: 1vh auto;
+        }
+    #wrapper div.fields textarea   {
+        width: 90%; margin-left: 5%;
+        }
+    #wrapper div.databox div.fields input.invalid   {
+        border-color: crimson;
+        }
+    #wrapper div.fields div.error   { background-color: lightpink;
+        text-align: center;
+        }
+    #wrapper span  {
+        padding: 1ex 5px; margin: 1ex 10px;
+        }
+    #wrapper span.btn   {
+        display: inline-block;
+        background-color: #efefef;
+        border: thin solid black;
+        border-radius: 6px;
+        padding: 0.5ex 0.5em;
+        cursor: pointer;
+        }
+    #wrapper span.btn:focus   {
+        border-width: medium;
+        }
+    #wrapper span.btn[title="Print"]    {
+        float: right;
+        }

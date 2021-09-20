@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import User
-from ..models import Identifier, Location, Supplier
+from ..models import Identifier, Location, Supplier, ItemTemplate
 
 
 @contextmanager
@@ -198,3 +198,102 @@ class SupplierResourceTest(TestCase):
         self.assertEquals(response.status_code, 202, "should return 'Accepted'")
 
         return
+
+
+class ItemTemplateResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           is_superuser=True,
+                                           password='rubySlippers')
+        Identifier.idents.create(barcode='1007')
+        cls.itmID = Identifier.idents.create(barcode='1000015')
+        ItemTemplate.objects.create(description='Yellow Brick Road', identifier=cls.itmID)
+        ItemTemplate.objects.create(description='Emerald City',
+                                    identifier=Identifier.idents.create(barcode='1000002'))
+        ItemTemplate.objects.create(description='Fields of Popae',
+                                    identifier=Identifier.idents.create(barcode='1000028'))
+
+    def test_list(self):
+
+        url = reverse('item-list')
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        for each in d['objects']:
+            self.assertIn('description', each, "should have description field")
+        return
+
+    def test_detail(self):
+
+        pk = 1000002
+        id = reverse('identifier-detail', kwargs={'pk': pk})
+        url = reverse('item-detail', kwargs={'pk': pk})
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, 200, "should return an item")
+        d = json.loads(response.content)
+        self.assertIn('description', d, "key field missing")
+        self.assertEquals(d['itmID'], id, "wrong itemID record found")
+
+    def test_create(self):
+
+        item = {'description': 'A La Carte',
+                'brand': 'Windham',
+                'content': 'Cotton Fabric',
+                'part_unit': 'By the Yard',
+                'yardage': True}
+        url = reverse('item-list')
+        response = self.client.post(url, {'description': 'A La Carte'},
+                                    content_type="application/json")
+        self.assertEquals(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, item, content_type="application/json")
+        self.assertEquals(response.status_code, 201, "should return 'Created'")
+
+        item['linked_code'] = '0006151620418'
+        response = self.client.post(url, item, content_type="application/json")
+        self.assertEquals(response.status_code, 201, "should return 'Created'")
+
+    def test_update(self):
+
+        pk = 1000002
+        item = {'content': 'Cotton Fabric',
+                'part_unit': 'By the Yard'}
+        change = json.dumps(item)
+        url = reverse('item-detail', kwargs={'pk': pk})
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
+        item['linked_code'] = '0006151620418'
+        change = json.dumps(item)
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
+        item['brand'] = 'Windham'
+        change = json.dumps(item)
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
+    def test_print_label(self):
+
+        pk = 1000015
+        change = json.dumps({'printed': True})
+        url = reverse('item-detail', kwargs={'pk': pk})
+
+        def test_patch(url, change):
+            response = self.client.patch(url, change)
+            self.assertEquals(response.status_code, 200, "should return 'OK'")
+
+        with capture(test_patch, url, change) as output:
+            self.assertEquals(output,
+                              'Printing barcode label for Item "Yellow Brick Road"\n',
+                              "Expected dummy print statement")

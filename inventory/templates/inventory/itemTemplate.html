@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+  {% load static %}
+  {% block linkspace %}  <link rel="stylesheet" type="text/css"
+        href="{% static 'inventory/css/itemTemplate.css' %}" />{% endblock %}
+  {% block styles %}
+    footer div {
+        text-align: center;
+        }
+  {% endblock %}
+  {% block scripts %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+  <script src="{% static 'common/js/backbone.validation.js' %}"></script>
+  <script src="{% static 'inventory/js/itemTemplate.js' %}"></script>
+  {% endblock %}
+  {% block contents %}
+    <div id="wrapper">
+      <div class="topline">{% include "pager.htm" %}</div>
+      <div class="bodyspace">
+      </div>    <!-- end of 'div.bodyspace' -->
+      <div class="bottomline">
+        <button type="button" title="Add">Add</button>
+      </div>
+    </div>
+    <template id="showBox">
+          <div class="databox">
+            <div class="fields">
+              <span><%= barcode %></span>
+              <span><%= linked_code %></span>
+              <span class="btn" title="Print">Print</span>
+              <div class="desc"><%= description %></div>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Edit">Edit</span>
+            </div>
+          </div>
+    </template>
+    <template id="editBox">
+          <div class="databox">
+            <div class="fields">
+              <div class="lines">
+                <label><%= barcode %></label>
+                <span>UPC:&nbsp;</span>
+                <input type="text" name="linked_code" value="<%= linked_code %>" />
+              </div>
+              <div class="lines">
+                <label for="description">Description:</label>
+                <input type="text" name="description" maxlength="120" value="<%= description %>"
+                    title="Description" required>
+                <div class="error"></div>
+              </div>
+              <div class="lines">
+                <label for="brand">Brand:</label>
+                <input type="text" name="brand" maxlength="32" value="<%= brand %>"
+                    title="Brand"
+                    placeholder="Hoffmann, Timeless Treasures, Moda, .... ; Prym, Clover, Dritz, ....">
+              </div>
+              <div class="lines">
+                <label for="content">Content:</label>
+                <input type="text" name="content" maxlength="32" value="<%= content %>"
+                    title="Content"
+                    placeholder="cotton, crepe de chine, jersey knit, .... ; book, notion, ....">
+              </div>
+              <div>
+                <label for="yardage">Yardage?</label>
+                <input type="checkbox" name="yardage" value="True" id="ydg" />
+              </div>
+              <div class="lines">
+                <label for="part_unit">Part Unit:</label>
+                <input type="text" name="part_unit" maxlength="32" value="<%= part_unit %>"
+                    title="Part Unit"
+                    placeholder="by the yard, panel, 4 yd cut, .... ; unit, ....">
+              </div>
+              <label for="notes">Notes:</label>
+              <textarea rows="2" title="Notes (optional)"
+                  name="notes"><%= notes %></textarea>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Save" tabindex="0">Save</span>
+              <span class="btn" title="Cancel" tabindex="0">Cancel</span>
+            </div>
+          </div>
+    </template>
+  {% endblock %}
+  {% block footer %}
+    <div>
+      <script>
+      var items = [{% for itm in page_obj %}
+        { 'description': "{{ itm.description }}", 'barcode': "{{ itm.identifier.barcode }}", 'brand': "{{ itm.brand|default_if_none:'' }}", 'content': "{{ itm.content|default_if_none:'' }}", 'part_unit': "{{ itm.part_unit|default_if_none:'' }}", 'yardage': "{{ itm.yardage }}", 'notes': "{{ itm.notes|default_if_none:'' }}", 'itmID': "{{ itm.identifier.urlize }}", 'linked_code': "{{ itm.linked_code|default_if_none:'' }}" },{% endfor %}]
+      var iV = new app.itmTmpltListView(items);
+      </script>
+    </div>
+  {% endblock %}

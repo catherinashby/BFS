@@ -1,6 +1,7 @@
 import json
 import sys
 
+from restless.data import Data
 from restless.dj import DjangoResource
 from restless.preparers import FieldsPreparer
 
@@ -82,8 +83,18 @@ class LocationResource(BaseResource):
     # POST /api/location/
     def create(self):
 
-        loc = Location()
+        errs = {}
+        name = self.data['name'] if 'name' in self.data else None
+        if not name:
+            errs = {'name': 'A name is required'}
+        else:
+            found = Location.objects.filter(name=name).exists()
+            if found:
+                errs = {'name': 'Name already used -- pick another'}
+        if errs:
+            return Data({'errors': errs}, should_prepare=False)
 
+        loc = Location()
         for fld in ['name', 'description']:
             val = self.data[fld] if fld in self.data else None
             setattr(loc, fld, val)
@@ -99,6 +110,12 @@ class LocationResource(BaseResource):
     def update(self, pk):
 
         loc = Location.objects.get(identifier_id=pk)
+        name = self.data['name'] if 'name' in self.data else loc.name
+        if name != loc.name:
+            found = Location.objects.filter(name=name).exists()
+            if found:
+                errs = {'name': 'Name already used -- pick another'}
+                return Data({'errors': errs}, should_prepare=False)
 
         for fld in ['name', 'description']:
             val = self.data[fld] if fld in self.data else None
@@ -149,8 +166,18 @@ class SupplierResource(BaseResource):
     # POST /api/supplier/
     def create(self):
 
-        who = Supplier()
+        errs = {}
+        name = self.data['name'] if 'name' in self.data else None
+        if not name:
+            errs = {'name': 'A name is required'}
+        else:
+            found = Supplier.objects.filter(name=name).exists()
+            if found:
+                errs = {'name': 'Name already used -- pick another'}
+        if errs:
+            return Data({'errors': errs}, should_prepare=False)
 
+        who = Supplier()
         for fld in ['name', 'street', 'street_ext', 'city', 'state', 'zip5',
                     'phone_1', 'phone_2', 'notes']:
             val = self.data[fld] if fld in self.data else None
@@ -163,6 +190,12 @@ class SupplierResource(BaseResource):
     def update(self, pk):
 
         who = Supplier.objects.get(id=pk)
+        name = self.data['name'] if 'name' in self.data else who.name
+        if name != who.name:
+            found = Supplier.objects.filter(name=name).exists()
+            if found:
+                errs = {'name': 'Name already used -- pick another'}
+                return Data({'errors': errs}, should_prepare=False)
 
         for fld in ['name', 'street', 'street_ext', 'city', 'state', 'zip5',
                     'phone_1', 'phone_2', 'notes']:
@@ -215,8 +248,18 @@ class ItemTemplateResource(BaseResource):
     # POST /api/item/
     def create(self):
 
-        item = ItemTemplate()
+        errs = {}
+        desc = self.data['description'] if 'description' in self.data else None
+        if not desc:
+            errs = {'description': 'A description is required'}
+        else:
+            found = ItemTemplate.objects.filter(description=desc).exists()
+            if found:
+                errs = {'description': 'Description already used -- pick another'}
+        if errs:
+            return Data({'errors': errs}, should_prepare=False)
 
+        item = ItemTemplate()
         for fld in ['description', 'brand', 'content',
                     'part_unit', 'yardage', 'notes']:
             val = self.data[fld] if fld in self.data else None
@@ -244,6 +287,12 @@ class ItemTemplateResource(BaseResource):
                 bc.save()
 
         item = ItemTemplate.objects.get(identifier_id=pk)
+        desc = self.data['description'] if 'description' in self.data else item.description
+        if desc != item.description:
+            found = ItemTemplate.objects.filter(description=desc).exists()
+            if found:
+                errs = {'description': 'Description already used -- pick another'}
+                return Data({'errors': errs}, should_prepare=False)
 
         for fld in ['description', 'brand', 'content',
                     'part_unit', 'yardage', 'notes']:

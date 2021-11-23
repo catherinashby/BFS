@@ -110,9 +110,23 @@ class LocationResourceTest(TestCase):
         self.assertEquals(response.status_code, 401, "should return 'Unauthorized'")
 
         self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {'description': ''},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('name', d['errors'], "name error missing")
+        self.assertEquals(d['errors']['name'], "A name is required")
+
         response = self.client.post(url, {'name': 'shelf', 'description': ''},
                                     content_type="application/json")
         self.assertEquals(response.status_code, 201, "should return 'Created'")
+
+        response = self.client.post(url, {'name': 'shelf', 'description': ''},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('name', d['errors'], "name error missing")
+        self.assertEquals(d['errors']['name'], "Name already used -- pick another")
 
     def test_update(self):
         pk = 1010
@@ -125,7 +139,16 @@ class LocationResourceTest(TestCase):
         response = self.client.put(url, change)
         self.assertEquals(response.status_code, 202, "should return 'Accepted'")
 
-        return
+        change = json.dumps({'name': 'Basket'})
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
+        change = json.dumps({'name': 'Shelf A-2'})
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('name', d['errors'], "name error missing")
+        self.assertEquals(d['errors']['name'], "Name already used -- pick another")
 
     def test_print_label(self):
         pk = 1010
@@ -140,7 +163,6 @@ class LocationResourceTest(TestCase):
             self.assertEquals(output,
                               'Printing barcode label for Location "Basket 1"\n',
                               "Expected dummy print statement")
-        return
 
 
 class SupplierResourceTest(TestCase):
@@ -179,12 +201,27 @@ class SupplierResourceTest(TestCase):
         self.assertEquals(response.status_code, 401, "should return 'Unauthorized'")
 
         self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {'description': ''},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('name', d['errors'], "name error missing")
+        self.assertEquals(d['errors']['name'], "A name is required")
+
+        self.client.login(username='dorothy', password='rubySlippers')
         response = self.client.post(url, {'name': 'Foust Textiles',
                                           'city': 'Kings Mountain',
                                           'state': 'North Carolina',
                                           'zip5': '28086'},
                                     content_type="application/json")
         self.assertEquals(response.status_code, 201, "should return 'Created'")
+
+        response = self.client.post(url, {'name': 'Foust Textiles'},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('name', d['errors'], "name error missing")
+        self.assertEquals(d['errors']['name'], "Name already used -- pick another")
 
     def test_update(self):
         pk = 1
@@ -197,7 +234,16 @@ class SupplierResourceTest(TestCase):
         response = self.client.put(url, change)
         self.assertEquals(response.status_code, 202, "should return 'Accepted'")
 
-        return
+        change = json.dumps({'name': 'New England Quilt Supply'})
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
+        change = json.dumps({'name': 'Fabric Mart'})
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('name', d['errors'], "name error missing")
+        self.assertEquals(d['errors']['name'], "Name already used -- pick another")
 
 
 class ItemTemplateResourceTest(TestCase):
@@ -241,8 +287,7 @@ class ItemTemplateResourceTest(TestCase):
 
     def test_create(self):
 
-        item = {'description': 'A La Carte',
-                'brand': 'Windham',
+        item = {'brand': 'Windham',
                 'content': 'Cotton Fabric',
                 'part_unit': 'By the Yard',
                 'yardage': True}
@@ -253,9 +298,24 @@ class ItemTemplateResourceTest(TestCase):
 
         self.client.login(username='dorothy', password='rubySlippers')
         response = self.client.post(url, item, content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('description', d['errors'], "description error missing")
+        self.assertEquals(d['errors']['description'], "A description is required")
+
+        item['description'] = 'A La Carte'
+        response = self.client.post(url, item, content_type="application/json")
         self.assertEquals(response.status_code, 201, "should return 'Created'")
 
+        response = self.client.post(url, item, content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('description', d['errors'], "description error missing")
+        self.assertEquals(d['errors']['description'],
+                          "Description already used -- pick another")
+
         item['linked_code'] = '0006151620418'
+        item['description'] = 'Comfort and Joy'
         response = self.client.post(url, item, content_type="application/json")
         self.assertEquals(response.status_code, 201, "should return 'Created'")
 
@@ -282,6 +342,20 @@ class ItemTemplateResourceTest(TestCase):
         change = json.dumps(item)
         response = self.client.put(url, change)
         self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
+        item['description'] = 'Mountains of Mist'
+        change = json.dumps(item)
+        response = self.client.put(url, change)
+        self.assertEquals(response.status_code, 202, "should return 'Accepted'")
+
+        item['description'] = 'Yellow Brick Road'
+        change = json.dumps(item)
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('description', d['errors'], "description error missing")
+        self.assertEquals(d['errors']['description'],
+                          "Description already used -- pick another")
 
     def test_print_label(self):
 

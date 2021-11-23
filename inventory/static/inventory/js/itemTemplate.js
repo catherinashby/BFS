@@ -112,16 +112,41 @@ app.itmTmpltView = Backbone.View.extend({
           this.cancelChange();
           return;
         }
-        this.model.set(changes);
-        if ( this.model.isNew() ) {
-            this.collection.add(this.model);
-        }
-        this.model.save( null, null, {'wait': true});
+        opts = { 'wait': true, 'view': this,
+                'template': this.editTemplate,
+                'success': this.serverResponse };
+        this.model.save(changes, opts);
         return;
     },
     saveKey: function(e)   {
         if ( e.keyCode == 13 )  {
             this.saveChange();
+        }
+        return;
+    },
+    serverResponse: function( model, response, options )  {
+        if ( 'locID' in response ) {    //  success
+            let isNew = ( model._previousAttributes.locID == null );
+            if ( isNew )    {
+                model.grouping.add( model );
+            }
+        } else {
+            //  we have errors; re-display the form
+            options.view.$el.html( options.template(model.attributes) );
+            var box = options.view.el;
+            var errs = response.errors;
+//
+            for ( var fld in errs ) {
+                let msg = errs[fld];
+                let selector = 'input[name="' + fld + '"]';
+                let src = box.querySelector( selector );
+                src.classList.add( 'invalid' );
+                src.setAttribute( 'data-error', msg );
+                let dest = box.querySelector('div.error');
+                dest.innerHTML = msg;
+                //  reset the model to last correct value
+                model.attributes[fld] = model._previousAttributes[fld];
+            }
         }
         return;
     },
@@ -171,6 +196,8 @@ app.itmTmpltListView = Backbone.View.extend({
             this.body.removeChild( fld );
         }
         var item = new app.itmTmplt();
+        item.urlRoot = app.itmTmpltList.prototype.url;
+        item.grouping = this.collection;
         var tmpltView = new app.itmTmpltView({
 			model: item,
             collection: this.collection

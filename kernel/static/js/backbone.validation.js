@@ -112,7 +112,7 @@ Backbone.Validation = (function () {
                         checker = defaultValidators[ test.name ] || null;
                     }
                     if ( _.isFunction( checker ) ) {
-                        let args = test.args || [];
+                        let args = [].concat(test.args || null);
                         args.unshift( elem.value );
                         let rc = checker.apply( null, args );
                         if ( ! rc )  {

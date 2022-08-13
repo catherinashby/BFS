@@ -102,6 +102,7 @@ class ItemTemplate(models.Model):
     part_unit = models.CharField(max_length=32, null=True, blank=True)
     # by the yard, panel, 4 yd cut, .... ; unit, ....
     yardage = models.BooleanField(default=True)
+    out_of_stock = models.BooleanField(default=False)
     notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
@@ -109,3 +110,16 @@ class ItemTemplate(models.Model):
 
     class Meta:
         ordering = ['identifier']
+
+
+class Picture(models.Model):
+    #   id
+    photo = models.FileField(upload_to='%Y/%m/%d/')
+    uploaded = models.DateField(auto_now_add=True)
+    item = models.ForeignKey(ItemTemplate, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return 'Photo {}'.format(self.id)
+
+    class Meta:
+        ordering = ['id']

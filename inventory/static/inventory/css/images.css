@@ -1,0 +1,81 @@
+    main    {
+        background-color: #f8f8ff; /* Ghost White */
+        padding: 1vh 1vw;
+        }
+    #wrapper    { background-color: white;
+        margin: 0 auto;
+        max-width: 1000px;
+        }
+    #wrapper div.bodyspace  {
+        border: thin solid black;
+        }
+    #wrapper div.noContent  {
+        padding: 20vh 0;
+        text-align: center;
+        }
+    #wrapper div.topline,
+    #wrapper div.bottomline {
+        padding: 2vh 2vw;
+        }
+    #wrapper div.topline    {
+        text-align: right;
+        }
+    #wrapper div.bottomline button  {
+        cursor: pointer;
+        }
+    #wrapper div.photo   {
+        border: thin solid black;
+        padding: 1vh 1vw;
+        }
+    #wrapper div.databox   {
+        display: flow-root;
+        max-width: 40em;
+        margin: 0 auto;
+        }
+    #wrapper  div.databox div.buttons    {
+        display: inline-block;
+        float: left;
+        width: 4em;
+        padding: 1vh 0;
+        }
+    #wrapper div.databox div.fields    {
+        width: calc(100% - 4.25em); /* width of 'buttons' column, and a bit */
+        float: right;
+        }
+    #wrapper div.item   {
+        padding: 2px 5px; margin: 2px 10px;
+        }
+    #wrapper img    {
+        display: inline-block;
+        float: right;
+        }
+    #wrapper div.databox div.fields input    {
+        margin-left: 1em;
+        }
+    #wrapper div.databox div.fields input.invalid   {
+        border-color: crimson;
+        }
+    #wrapper div.fields div.error   { background-color: lightpink;
+        text-align: center;
+        }
+    #wrapper span  {
+        padding: 2px 5px; margin: 2px 10px;
+        }
+    #wrapper span.img   {
+        display: inline-block;
+        margin: 25px;
+        }
+    #wrapper span.btn   {
+        display: inline-block;
+        background-color: #efefef;
+        border: thin solid black;
+        border-radius: 6px;
+        padding: 0.5ex 0.5em;
+        cursor: pointer;
+        }
+    #wrapper span.btn:focus   {
+        border-width: medium;
+        }
+    #wrapper span.btn[title="Cancel"]    {
+        margin-top: 12px;
+        }

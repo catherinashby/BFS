@@ -2,10 +2,10 @@ import json
 import sys
 
 from restless.data import Data
-from restless.dj import DjangoResource
 from restless.preparers import FieldsPreparer
 
-from .models import Identifier, Location, Supplier, ItemTemplate
+from .dj4 import DjangoResource
+from .models import Identifier, Location, Supplier, ItemTemplate, Picture
 
 
 class BaseResource(DjangoResource):
@@ -308,3 +308,49 @@ class ItemTemplateResource(BaseResource):
         item = ItemTemplate.objects.get(identifier_id=pk)
         print('Printing barcode label for Item "{}"'.format(item))
         return
+
+
+class PictureResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'id': 'id',
+        'photo': 'photo.name',
+        'uploaded': 'uploaded',
+        'item_id': 'item_id',
+    })
+
+    def is_authenticated(self):
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_picture')
+        return ok
+
+    # GET /api/picture/
+    def list(self):
+        qs = Picture.objects.all()
+        return qs
+
+    # GET /api/picture/<pk>/
+    def detail(self, pk):
+        qs = Picture.objects.get(id=pk)
+        return qs
+
+    # PUT /api/location/<pk>/
+    def update(self, pk):
+
+        img = Picture.objects.get(id=pk)
+        fld = 'item_id'
+        val = self.data[fld] if fld in self.data else None
+        if val is None:
+            errs = {'item_id': 'No identifier received'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        if val:
+            found = Identifier.itemIDs.filter(barcode=val).exists()
+            if not found:
+                errs = {'item_id': 'Not a valid identifier'}
+                return Data({'errors': errs}, should_prepare=False)
+
+        setattr(img, fld, val)
+        img.save()
+        return img

@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import apis, views
 
 urlpatterns = [
@@ -6,7 +7,9 @@ urlpatterns = [
     path('shelves', views.shelves, name='shelves'),
     path('suppliers', views.suppliers, name='suppliers'),
     path('itemTemplates', views.itemTemplates, name='itemTemplates'),
+    path('images', views.images, name='images'),
     path('identifier/<int:pk>', views.identifier_detail, name='identifier-detail'),
+    path('images/upload', views.images_upload, name='images-upload'),
 
     path('api/locid', apis.LocIdResource.as_list(), name='locid-list'),
     path('api/locid/<int:pk>', apis.LocIdResource.as_detail(), name='locid-detail'),
@@ -16,5 +19,7 @@ urlpatterns = [
     path('api/supplier/<int:pk>', apis.SupplierResource.as_detail(), name='supplier-detail'),
     path('api/item', apis.ItemTemplateResource.as_list(), name='item-list'),
     path('api/item/<int:pk>', apis.ItemTemplateResource.as_detail(), name='item-detail'),
+    path('api/picture', apis.PictureResource.as_list(), name='picture-list'),
+    path('api/picture/<int:pk>', apis.PictureResource.as_detail(), name='picture-detail'),
 
 ]

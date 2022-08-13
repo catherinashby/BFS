@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ..models import Identifier, Location, Supplier, ItemTemplate
+from ..models import Identifier, Location, Supplier, ItemTemplate, Picture
 
 
 class IdentifierTest(TestCase):
@@ -17,17 +17,17 @@ class IdentifierTest(TestCase):
 
     def test_make_locID(self):
         result = Identifier.make_loc_id()
-        self.assertEquals(result, '1007')
+        self.assertEqual(result, '1007')
         Identifier.idents.create(barcode='1007')
         result = Identifier.make_loc_id()
-        self.assertEquals(result, '1010')
+        self.assertEqual(result, '1010')
 
     def test_make_itemID(self):
         result = Identifier.make_item_id()
-        self.assertEquals(result, '1000002')
+        self.assertEqual(result, '1000002')
         Identifier.idents.create(barcode='1000002')
         result = Identifier.make_item_id()
-        self.assertEquals(result, '1000015')
+        self.assertEqual(result, '1000015')
 
 
 class LocationTest(TestCase):
@@ -55,3 +55,11 @@ class ItemTemplateTest(TestCase):
         itm = ItemTemplate(description=desc)
         lbl = '{}'.format(itm)
         self.assertEqual(lbl, itm.description)
+
+
+class PictureTest(TestCase):
+
+    def test_name(self):
+        pic = Picture(id=1)
+        lbl = '{}'.format(pic)
+        self.assertEqual(lbl, "Photo 1")

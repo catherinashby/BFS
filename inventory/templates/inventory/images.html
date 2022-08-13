@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+  {% load static %}
+  {% block linkspace %}  <link rel="stylesheet" type="text/css"
+        href="{% static 'inventory/css/images.css' %}" />{% endblock %}
+  {% block styles %}
+    footer div {
+        text-align: center;
+        }
+  {% endblock %}
+  {% block scripts %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+  <script src="{% static 'common/js/backbone.validation.js' %}"></script>
+  <script src="{% static 'inventory/js/images.js' %}"></script>
+  {% endblock %}
+  {% block contents %}
+    <div id="wrapper">
+      <div class="topline">{% include "pager.htm" %}</div>
+      <div class="bodyspace">
+      </div>    <!-- end of 'div.bodyspace' -->
+      <div class="bottomline">
+        <button type="button" title="Add">Add</button>
+      </div>
+    </div>
+    <template id="showBox">
+          <div class="databox">
+            <div class="fields">
+              <img src="{{ mu }}<%= photo %>" alt="photo#<%= id %>"
+                   height="100" width="100" />
+              <span>Image # <%= id %></span>
+              <span>Uploaded:&nbsp;<%= uploaded %></span>
+              <div class="item">
+              <%if (obj.item_id) { %> Item# <%= item_id %> <% } %>
+              </div>
+              <span>{{ mu }}<%= photo %></span>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Edit">Edit</span>
+            </div>
+          </div>
+    </template>
+    <template id="editBox">
+          <div class="databox">
+            <div class="fields">
+              <img src="{{ mu }}<%= photo %>" alt="photo#<%= id %>"
+                   height="100" width="100" />
+              <span>Image # <%= id %></span>
+              <span>Uploaded:&nbsp;<%= uploaded %></span>
+              <div class="item">
+                Item#
+                <input type="text" name="item_id"
+                      value="<%if (obj.item_id) { %><%= item_id %><% } %>" />
+                <div class="error"></div>
+              </div>
+              <span>{{ mu }}<%= photo %></span>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Save" tabindex="0">Save</span>
+              <span class="btn" title="Cancel" tabindex="0">Cancel</span>
+            </div>
+          </div>
+    </template>
+    <template id="addBox">
+          <div class="databox">
+            <div class="fields">
+              <input type="file" name="image" />
+              <div class="error"></div>
+              <div id="imagePreview"></div>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Save" tabindex="0">Save</span>
+              <span class="btn" title="Cancel" tabindex="0">Cancel</span>
+            </div>
+          </div>
+    </template>
+  {% endblock %}
+  {% block footer %}
+    <div>
+      <script>
+      var items = [{% for img in page_obj %}
+        { 'id': "{{ img.id }}", 'photo': "{{img.photo }}", 'uploaded': "{{ img.uploaded }}", 'item_id': "{{ img.item_id|default_if_none:'' }}" },{% endfor %}]
+      var stop = "here";
+      var sV = new app.imagesView(items);
+      </script>
+    </div>
+  {% endblock %}

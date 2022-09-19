@@ -18,6 +18,40 @@ class BaseResource(DjangoResource):
         return d
 
 
+class IdentResource(BaseResource):
+
+    def is_authenticated(self):
+        if self.request.method == 'GET':
+            return True
+        else:
+            return False
+
+    # GET /api/idents/<digitstring>
+    def detail(self, digitstring):
+
+        data = {'digitstring': digitstring}
+        if not digitstring.isdigit():
+            errs = {'digitstring': 'Must be a string of digits'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        try:
+            id = Identifier.idents.get(barcode=digitstring)
+        except Identifier.DoesNotExist:
+            try:
+                id = Identifier.idents.get(linked_code=digitstring)
+            except Identifier.DoesNotExist:
+                id = None
+
+        ident = id.barcode if id else ""
+        data['identifier'] = ident
+        data['type'] = 'OTHER'
+        if len(ident) == Identifier.LOC_LEN:
+            data['type'] = 'LOC'
+        if len(ident) == Identifier.ITM_LEN:
+            data['type'] = 'ITM'
+        return data
+
+
 class LocIdResource(BaseResource):
     preparer = FieldsPreparer(fields={
         'barcode': 'barcode',

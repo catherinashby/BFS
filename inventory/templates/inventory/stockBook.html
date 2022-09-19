@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block linkspace %}
+  <link rel="stylesheet" type="text/css"
+       href="{% static 'inventory/css/stockBook.css' %}" />
+{% endblock linkspace %}
+
+{% block scripts %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+  <script src="{% static 'common/js/backbone.validation.js' %}"></script>
+  <script src="{% static 'inventory/js/stockBook.js' %}"></script>
+{% endblock scripts %}
+
+{% block contents %}
+  <div id="wrapper">
+    <div id="banner">
+      Enter a Location ID, then enter the Item IDs
+    </div>
+    <div id="locationBox"></div>
+    <div id="entryBox">
+      <input type="text" size="24" name="digitString"
+             placeholder="Enter Identifier" />
+      <div class="error"></div>
+    </div>
+    <div id="itemBox"></div>
+    <div id="itemListBox"></div>
+  </div>
+    <template id="showLocation">
+      <div class="databox">
+        <div class="fields">
+          <span><%= identifier %></span>
+          <span><%= name %></span>
+          <div class="desc"><%= description %></div>
+        </div>
+      </div>
+    </template>
+    <template id="showItemTemplate">
+      <div class="databox">
+        <div class="fields">
+          <span><%= identifier %></span>
+          <span><%= brand %></span>
+          <div class="desc"><%= description %></div>
+        </div>
+      </div>
+    </template>
+{% endblock contents %}
+
+{% block footer %}
+    <div>
+      <script>
+        var stop = 'here';
+        app.entryView = new app.dataEntryView();
+        var stop_again = 'yes';
+      </script>
+    </div>
+{% endblock footer %}

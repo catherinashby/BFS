@@ -21,6 +21,61 @@ def capture(command, *args, **kwargs):
         sys.stdout = out
 
 
+class IdentResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        Identifier.idents.create(barcode='1007')
+        Identifier.idents.create(barcode='1010')
+        Identifier.idents.create(barcode='1000002', linked_code='0006151620418')
+        Identifier.idents.create(barcode='1000015')
+
+    def test_auth(self):
+        digitstring = ' '
+        url = reverse('ident-detail', kwargs={'digitstring': digitstring})
+        response = self.client.post(url, {'barcode': 999},
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+    def test_detail(self):
+        digitstring = ' '
+        url = reverse('ident-detail', kwargs={'digitstring': digitstring})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return 'OK'")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('digitstring', d['errors'], "digitstriing error missing")
+        self.assertEqual(d['errors']['digitstring'], "Must be a string of digits")
+
+        digitstring = '999'
+        url = reverse('ident-detail', kwargs={'digitstring': digitstring})
+        response = self.client.get(url)
+        d = json.loads(response.content)
+        self.assertIn('type', d, "type field missing")
+        self.assertEqual(d['type'], "OTHER", "Wrong typecode")
+
+        digitstring = '1007'
+        url = reverse('ident-detail', kwargs={'digitstring': digitstring})
+        response = self.client.get(url)
+        d = json.loads(response.content)
+        self.assertIn('type', d, "type field missing")
+        self.assertEqual(d['type'], "LOC", "Wrong typecode")
+
+        digitstring = '1000015'
+        url = reverse('ident-detail', kwargs={'digitstring': digitstring})
+        response = self.client.get(url)
+        d = json.loads(response.content)
+        self.assertIn('type', d, "type field missing")
+        self.assertEqual(d['type'], "ITM", "Wrong typecode")
+
+        digitstring = '0006151620418'
+        url = reverse('ident-detail', kwargs={'digitstring': digitstring})
+        response = self.client.get(url)
+        d = json.loads(response.content)
+        self.assertIn('type', d, "type field missing")
+        self.assertEqual(d['type'], "ITM", "Wrong typecode")
+
+
 class LocIdResourceTest(TestCase):
 
     @classmethod

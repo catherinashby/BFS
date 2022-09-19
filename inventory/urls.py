@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import TemplateView
 
 from . import apis, views
 
@@ -13,6 +14,7 @@ urlpatterns = [
 
     path('api/locid', apis.LocIdResource.as_list(), name='locid-list'),
     path('api/locid/<int:pk>', apis.LocIdResource.as_detail(), name='locid-detail'),
+    path('api/idents/<str:digitstring>', apis.IdentResource.as_detail(), name='ident-detail'),
     path('api/location', apis.LocationResource.as_list(), name='location-list'),
     path('api/location/<int:pk>', apis.LocationResource.as_detail(), name='location-detail'),
     path('api/supplier', apis.SupplierResource.as_list(), name='supplier-list'),
@@ -22,4 +24,5 @@ urlpatterns = [
     path('api/picture', apis.PictureResource.as_list(), name='picture-list'),
     path('api/picture/<int:pk>', apis.PictureResource.as_detail(), name='picture-detail'),
 
+    path('stock', TemplateView.as_view(template_name="inventory/stockBook.html"), name='stockBook'),
 ]

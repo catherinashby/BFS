@@ -10,14 +10,22 @@
         text-align: center;
         font-size: larger;
         }
-    #locationBox    { border: thin solid green;
+    #locationBox    {
+        margin-top: 1ex;
     }
-    #entryBox  { background-color: white; border: thin solid blue;
+    #entryBox  {
         text-align: center;
         padding: 1em 0;
         }
-    div.itemTemplate    { border: thin solid black;
+    #itemBox {
+        padding-left: 30vw;
+        }
+    div.itemTemplate    {
+        padding-top: 1ex;
     }
+    div.itemTemplate hr {
+        width: 50%;
+        }
     div.error   {
         padding: 1ex 0;
         color: red;

@@ -12,6 +12,7 @@ urlpatterns = [
     path('identifier/<int:pk>', views.identifier_detail, name='identifier-detail'),
     path('images/upload', views.images_upload, name='images-upload'),
 
+    path('dev', TemplateView.as_view(template_name="inventory/dev.html"), name="dev-api"),
     path('api/locid', apis.LocIdResource.as_list(), name='locid-list'),
     path('api/locid/<int:pk>', apis.LocIdResource.as_detail(), name='locid-detail'),
     path('api/idents/<str:digitstring>', apis.IdentResource.as_detail(), name='ident-detail'),
@@ -23,6 +24,8 @@ urlpatterns = [
     path('api/item/<int:pk>', apis.ItemTemplateResource.as_detail(), name='item-detail'),
     path('api/picture', apis.PictureResource.as_list(), name='picture-list'),
     path('api/picture/<int:pk>', apis.PictureResource.as_detail(), name='picture-detail'),
+    # path('api/stock', apis.StockBookResource.as_list(), name='stock-list'),
+    path('api/stock/<int:pk>', apis.StockBookResource.as_detail(), name='stock-detail'),
 
-    path('stock', TemplateView.as_view(template_name="inventory/stockBook.html"), name='stockBook'),
+    path('stock', views.stockbook, name='stockBook'),
 ]

@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from ..models import Identifier, Location, Supplier, ItemTemplate, Picture
+from ..models import StockBook
 
 
 @contextmanager
@@ -497,3 +498,101 @@ class PictureResourceTest(TestCase):
         self.assertIn('errors', d, "errors container missing")
         self.assertIn('item_id', d['errors'], "item_id error missing")
         self.assertEqual(d['errors']['item_id'], "No identifier received")
+
+
+class StockBookResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           is_superuser=True,
+                                           password='rubySlippers')
+        cls.locID = '1007'
+        cls.itmID = '1000002'
+        cls.itm2 = '1000015'
+        l1 = Location.objects.create(
+                    identifier=Identifier.idents.create(barcode=cls.locID))
+        i1 = ItemTemplate.objects.create(description='Bolt of Fabric',
+                    identifier=Identifier.idents.create(barcode=cls.itmID))
+        i2 = ItemTemplate.objects.create(description='Inventoried Item',
+                    yardage=False,
+                    identifier=Identifier.idents.create(barcode=cls.itm2))
+        StockBook.objects.create(itm=i1, loc=l1)
+        return
+
+    def test_detail(self):
+        url = reverse('stock-detail', kwargs={'pk': 1000})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return an error")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('itm_id', d['errors'], "itm_id error missing")
+        self.assertEqual(d['errors']['itm_id'], "Item not found")
+
+        url = reverse('stock-detail', kwargs={'pk': self.itm2})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return an error")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('item', d['errors'], "item error missing")
+        self.assertEqual(d['errors']['item'], "Record not found")
+
+        url = reverse('stock-detail', kwargs={'pk': self.itmID})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return a stock record")
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "errors container found")
+        self.assertIn('itm', d, "itm field missing")
+        self.assertEqual(d['itm'], self.itmID)
+        return
+
+    def test_update(self):
+
+        url = reverse('stock-detail', kwargs={'pk': 1000})
+        response = self.client.put(url, 'Invalid item ID')
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.put(url, '{"itm_id": 1000}')
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('itm_id', d['errors'], "itm_id error missing")
+        self.assertEqual(d['errors']['itm_id'], "Item not found")
+
+        url = reverse('stock-detail', kwargs={'pk': self.itm2})
+        response = self.client.put(url, '{"key": "value"}')
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('loc_id', d['errors'], "loc_id error missing")
+        self.assertEqual(d['errors']['loc_id'], "No location ID received")
+
+        response = self.client.put(url, '{"loc_id": 42}')
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('loc', d['errors'], "loc error missing")
+        self.assertEqual(d['errors']['loc'], "Location not found")
+
+        url = reverse('stock-detail', kwargs={'pk': self.itm2})
+        change = json.dumps({'loc_id': self.locID, 'eighths': 4})
+        response = self.client.put(url, change)
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "errors container found")
+        self.assertIn('eighths', d, "eighths field missing")
+        self.assertIsNone(d['eighths'], "Eighths should be unset")
+
+        url = reverse('stock-detail', kwargs={'pk': self.itmID})
+        change = json.dumps({'loc_id': self.locID, 'eighths': 4, 'units': 24})
+        response = self.client.put(url, change)
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "errors container found")
+        self.assertIn('eighths', d, "eighths field missing")
+        self.assertEqual(d['eighths'], 4, "Eighths should be set")
+
+        return

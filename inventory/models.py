@@ -123,3 +123,17 @@ class Picture(models.Model):
 
     class Meta:
         ordering = ['id']
+
+
+class StockBook(models.Model):
+
+    itm = models.OneToOneField(ItemTemplate, on_delete=models.CASCADE,
+                               primary_key=True)
+    loc = models.ForeignKey(Location, on_delete=models.CASCADE, null=True)
+    units = models.PositiveSmallIntegerField(null=True, blank=True)
+    eighths = models.PositiveSmallIntegerField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return 'Stock Record for Item {}'.format(self.itm_id)

@@ -29,14 +29,25 @@
     <div class="box">
     {% if perms.inventory %}
       <div class="square">
-        <div class="content">
-          <a href="{% url 'stockBook' %}">
-          <div class="content">Stock Book</div>
-          </a>
-        </div>
+        <a href="{% url 'shelves' %}">
+          <div class="content">Shelves</div>
+        </a>
       </div>
-      <div class="square"><div class="content">Replenishment</div></div>
-      <div class="square"><div class="content">Register</div></div>
+      <div class="square">
+        <a href="{% url 'suppliers' %}">
+          <div class="content">Suppliers</div>
+        </a>
+      </div>
+      <div class="square">
+        <a href="{% url 'itemTemplates' %}">
+          <div class="content">Stock</div>
+        </a>
+      </div>
+      <div class="square">
+        <a href="{% url 'images' %}">
+          <div class="content">Images</div>
+        </a>
+      </div>
     {% endif %}
     </div>
   {% endblock %}

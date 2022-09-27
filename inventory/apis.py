@@ -6,6 +6,7 @@ from restless.preparers import FieldsPreparer
 
 from .dj4 import DjangoResource
 from .models import Identifier, Location, Supplier, ItemTemplate, Picture
+from .models import StockBook
 
 
 class BaseResource(DjangoResource):
@@ -388,3 +389,80 @@ class PictureResource(BaseResource):
         setattr(img, fld, val)
         img.save()
         return img
+
+
+class StockBookResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'itm': 'itm_id',
+        'loc': 'loc_id',
+        'units': 'units',
+        'eighths': 'eighths',
+        'created': 'created',
+        'updated': 'updated',
+    })
+
+    def is_authenticated(self):
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_stockbook')
+        return ok
+
+    # GET /api/stockbook/           def list(self):
+
+    # GET /api/stockbook/<pk>/
+    def detail(self, pk):
+        try:
+            item = ItemTemplate.objects.get(identifier_id=pk)
+        except ItemTemplate.DoesNotExist:
+            errs = {'itm_id': 'Item not found'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        try:
+            rcd = StockBook.objects.get(itm=item)
+        except StockBook.DoesNotExist:
+            errs = {'item': 'Record not found'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        return rcd
+
+    # POST /api/stockbook/          def create(self):
+
+    # POST /api/stockbook/<pk>
+    def update(self, pk):
+        try:
+            item = ItemTemplate.objects.get(identifier_id=pk)
+        except ItemTemplate.DoesNotExist:
+            errs = {'itm_id': 'Item not found'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        fld = 'loc_id'
+        val = self.data[fld] if fld in self.data else None
+        if val:
+            try:
+                loc = Location.objects.get(identifier_id=val)
+            except Location.DoesNotExist:
+                errs = {'loc': 'Location not found'}
+                return Data({'errors': errs}, should_prepare=False)
+        else:
+            errs = {'loc_id': 'No location ID received'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        qs = StockBook.objects.get_or_create(itm=item)
+        rcd = qs[0]
+        rcd.loc = loc
+
+        fld = 'eighths'
+        val = self.data[fld] if fld in self.data else None
+        eighths = val if item.yardage else None
+
+        fld = 'units'
+        units = self.data[fld] if fld in self.data else None
+
+        if units:
+            rcd.units = units
+            rcd.eighths = eighths
+
+        rcd.save()
+        return rcd
+

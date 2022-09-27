@@ -93,6 +93,13 @@ def images_upload(request):
     return resp
 
 
+@login_required
+def stockbook(request):
+    context = {}
+    template = "inventory/stockBook.html"
+    return TemplateResponse(request, template, context)
+
+
 # GET /inventory/identifier/<pk>/
 def identifier_detail(request, pk):
     one = Identifier.idents.get(barcode=pk)

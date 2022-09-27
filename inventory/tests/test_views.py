@@ -165,3 +165,28 @@ class ImagesUploadTest(TestCase):
         self.assertIsInstance(resp, JsonResponse, "should be a JsonResponse")
         d = json.loads(resp.content)
         self.assertNotIn('error', d, "response should succeed")
+
+
+class StockBookViewTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           password='rubySlippers')
+
+    def test_stockBook_page(self):
+
+        url = reverse('stockBook')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith(reverse('log_in')),
+                        "stockBook should not be available without logging in")
+
+        self.client.force_login(self.usr)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name, 'inventory/stockBook.html')
+        return
+

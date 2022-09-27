@@ -1,6 +1,7 @@
 from django.test import TestCase
 
 from ..models import Identifier, Location, Supplier, ItemTemplate, Picture
+from ..models import StockBook
 
 
 class IdentifierTest(TestCase):
@@ -63,3 +64,11 @@ class PictureTest(TestCase):
         pic = Picture(id=1)
         lbl = '{}'.format(pic)
         self.assertEqual(lbl, "Photo 1")
+
+
+class StockBookTest(TestCase):
+
+    def test_name(self):
+        rcd = StockBook(itm_id=1000002,loc_id=1007)
+        lbl = '{}'.format(rcd)
+        self.assertEqual(lbl, "Stock Record for Item 1000002")

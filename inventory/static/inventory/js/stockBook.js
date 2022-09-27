@@ -55,6 +55,20 @@ app.itmTmpltList = Backbone.Collection.extend({
     }
 });
 
+app.stockRecord = Backbone.Model.extend({
+    defaults: {
+        'itm_id': null,
+        'loc_id': null
+    },
+    idAttribute: 'itm_id',
+    initialize: function()  {
+        this.on("change:itm_id", function() {
+            var id = this.get("itm_id");
+            this.url = '/inventory/api/stock/' + id;
+        });
+    }
+});
+
 app.dataEntry = Backbone.Model.extend({
     defaults: {
         'identifier': null,
@@ -149,6 +163,7 @@ app.dataEntryView = Backbone.View.extend({
         this.inp = this.el.querySelector('input[name="digitString"]');
         this.divErr = this.el.querySelector('div.error');
         app.locView = new app.locationView();
+        app.stockRcd = new app.stockRecord();
         app.itemListView = new app.itmTmpltListView();
         this.listenTo(this.model, 'sync', this.checkReturned);
         return;
@@ -164,10 +179,13 @@ app.dataEntryView = Backbone.View.extend({
                         break;
                     }
                     app.itemListView.collection.addID(ident);
+                    app.stockRcd.set('itm_id', ident);
+                    app.stockRcd.save();
                     break;
                 case 'LOC':
                     this.currLoc = ident;
                     app.locView.model.set('identifier', ident);
+                    app.stockRcd.set('loc_id', ident);
                     app.itemListView.clearCollection();
                     break;
                 default:

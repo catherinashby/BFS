@@ -24,8 +24,14 @@ urlpatterns = [
     path('api/item/<int:pk>', apis.ItemTemplateResource.as_detail(), name='item-detail'),
     path('api/picture', apis.PictureResource.as_list(), name='picture-list'),
     path('api/picture/<int:pk>', apis.PictureResource.as_detail(), name='picture-detail'),
-    # path('api/stock', apis.StockBookResource.as_list(), name='stock-list'),
+    path('api/stock', apis.StockBookResource.as_list(), name='stock-list'),
     path('api/stock/<int:pk>', apis.StockBookResource.as_detail(), name='stock-detail'),
+    # path('api/price', apis.PriceResource.as_list(), name='price-list'),
+    path('api/price/<int:pk>', apis.PriceResource.as_detail(), name='price-detail'),
+    path('api/invoice', apis.InvoiceResource.as_list(), name='invoice-list'),
+    path('api/invoice/<int:pk>', apis.InvoiceResource.as_detail(), name='invoice-detail'),
+    path('api/purchase', apis.PurchaseResource.as_list(), name='purchase-list'),
+    path('api/purchase/<int:pk>', apis.PurchaseResource.as_detail(), name='purchase-detail'),
 
     path('stock', views.stockbook, name='stockBook'),
 ]

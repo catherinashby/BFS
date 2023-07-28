@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from ..models import Identifier, Location, Supplier, ItemTemplate, Picture
-from ..models import StockBook
+from ..models import StockBook, Price, Invoice, Purchase
 
 
 class IdentifierTest(TestCase):
@@ -69,6 +69,30 @@ class PictureTest(TestCase):
 class StockBookTest(TestCase):
 
     def test_name(self):
-        rcd = StockBook(itm_id=1000002,loc_id=1007)
+        rcd = StockBook(itm_id=1000002, loc_id=1007)
         lbl = '{}'.format(rcd)
         self.assertEqual(lbl, "Stock Record for Item 1000002")
+
+
+class PriceTest(TestCase):
+
+    def test_name(self):
+        rcd = Price(itm_id=1000002, price=9.99)
+        lbl = '{}'.format(rcd)
+        self.assertEqual(lbl, "Price for Item 1000002 is 9.99")
+
+
+class InvoiceTest(TestCase):
+
+    def test_name(self):
+        inv = Invoice(id=1, vendor=Supplier(name='Choice Fabrics'))
+        lbl = '{}'.format(inv)
+        self.assertEqual(lbl, "Invoice #1 from Choice Fabrics")
+
+
+class PurchaseTest(TestCase):
+
+    def test_name(self):
+        pchs = Purchase(invoice_id=101, item_id=1000002)
+        lbl = '{}'.format(pchs)
+        self.assertEqual(lbl, "Inv:101 Item:1000002")

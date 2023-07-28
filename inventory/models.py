@@ -137,3 +137,40 @@ class StockBook(models.Model):
 
     def __str__(self):
         return 'Stock Record for Item {}'.format(self.itm_id)
+
+
+class Price(models.Model):
+
+    itm = models.OneToOneField(ItemTemplate, on_delete=models.CASCADE,
+                               primary_key=True)
+    price = models.DecimalField(max_digits=6, decimal_places=2,
+                                null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return 'Price for Item {} is {}'.format(self.itm_id,
+                                                self.price)
+
+
+class Invoice(models.Model):
+    # id    (>100)
+    vendor = models.ForeignKey(Supplier, on_delete=models.CASCADE)
+    received = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return 'Invoice #{} from {}'.format(self.id, self.vendor.name)
+
+
+class Purchase(models.Model):
+    # id
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE)
+    item = models.ForeignKey(ItemTemplate, on_delete=models.CASCADE)
+    cost = models.DecimalField(max_digits=8, decimal_places=2,
+                               null=True, blank=True)
+
+    def __str__(self):
+        return 'Inv:{} Item:{}'.format(self.invoice_id, self.item_id)
+
+    class Meta:
+        unique_together = ['invoice', 'item']

@@ -1,3 +1,4 @@
+import decimal
 import json
 import sys
 
@@ -6,7 +7,7 @@ from restless.preparers import FieldsPreparer
 
 from .dj4 import DjangoResource
 from .models import Identifier, Location, Supplier, ItemTemplate, Picture
-from .models import StockBook
+from .models import StockBook, Price, Invoice, Purchase
 
 
 class BaseResource(DjangoResource):
@@ -408,7 +409,10 @@ class StockBookResource(BaseResource):
         ok = user.has_perm('inventory.add_stockbook')
         return ok
 
-    # GET /api/stockbook/           def list(self):
+    # GET /api/stockbook/
+    def list(self):
+        qs = StockBook.objects.all()
+        return qs
 
     # GET /api/stockbook/<pk>/
     def detail(self, pk):
@@ -426,31 +430,40 @@ class StockBookResource(BaseResource):
 
         return rcd
 
-    # POST /api/stockbook/          def create(self):
+    # POST /api/stockbook/
+    def create(self):
+        fld = 'itm_id'
+        val = self.data[fld] if fld in self.data else None
+        if not val:
+            errs = {'itm_id': 'No item ID received'}
+            return Data({'errors': errs}, should_prepare=False)
 
-    # POST /api/stockbook/<pk>
-    def update(self, pk):
         try:
-            item = ItemTemplate.objects.get(identifier_id=pk)
+            item = ItemTemplate.objects.get(identifier_id=val)
         except ItemTemplate.DoesNotExist:
             errs = {'itm_id': 'Item not found'}
             return Data({'errors': errs}, should_prepare=False)
 
+        found = True
+        try:
+            StockBook.objects.get(itm_id=val)
+        except StockBook.DoesNotExist:
+            found = False
+        if found:
+            errs = {'itm_id': 'Record already exists'}
+            return Data({'errors': errs}, should_prepare=False)
+
         fld = 'loc_id'
         val = self.data[fld] if fld in self.data else None
+        loc = None
         if val:
             try:
                 loc = Location.objects.get(identifier_id=val)
             except Location.DoesNotExist:
-                errs = {'loc': 'Location not found'}
+                errs = {'loc_id': 'Location not found'}
                 return Data({'errors': errs}, should_prepare=False)
-        else:
-            errs = {'loc_id': 'No location ID received'}
-            return Data({'errors': errs}, should_prepare=False)
 
-        qs = StockBook.objects.get_or_create(itm=item)
-        rcd = qs[0]
-        rcd.loc = loc
+        rcd = StockBook(itm=item, loc=loc)
 
         fld = 'eighths'
         val = self.data[fld] if fld in self.data else None
@@ -466,3 +479,221 @@ class StockBookResource(BaseResource):
         rcd.save()
         return rcd
 
+    # POST /api/stockbook/<pk>
+    def update(self, pk):
+        try:
+            item = ItemTemplate.objects.get(identifier_id=pk)
+        except ItemTemplate.DoesNotExist:
+            errs = {'itm_id': 'Item not found'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        loc = None
+        fld = 'loc_id'
+        val = self.data[fld] if fld in self.data else None
+        if val:
+            try:
+                loc = Location.objects.get(identifier_id=val)
+            except Location.DoesNotExist:
+                errs = {'loc_id': 'Location not found'}
+                return Data({'errors': errs}, should_prepare=False)
+
+        qs = StockBook.objects.get_or_create(itm=item)
+        rcd = qs[0]
+        rcd.loc = loc if loc else rcd.loc
+
+        fld = 'eighths'
+        val = self.data[fld] if fld in self.data else None
+        eighths = val if item.yardage else None
+
+        fld = 'units'
+        units = self.data[fld] if fld in self.data else None
+
+        if units:
+            rcd.units = units
+            rcd.eighths = eighths
+
+        rcd.save()
+        return rcd
+
+
+class PriceResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'itm': 'itm_id',
+        'price': 'price',
+        'created': 'created',
+        'updated': 'updated',
+    })
+
+    def is_authenticated(self):
+
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_price')
+        return ok
+
+    # GET /api/price/           def list(self):
+
+    # GET /api/price/<pk>/
+    def detail(self, pk):
+
+        try:
+            item = ItemTemplate.objects.get(identifier_id=pk)
+        except ItemTemplate.DoesNotExist:
+            errs = {'itm_id': 'Item not found'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        try:
+            rcd = Price.objects.get(itm=item)
+        except Price.DoesNotExist:
+            errs = {'item': 'Record not found'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        return rcd
+
+    # POST /api/price/          def create(self):
+
+    # POST /api/price/<pk>/
+    def update(self, pk):
+
+        try:
+            item = ItemTemplate.objects.get(identifier_id=pk)
+        except ItemTemplate.DoesNotExist:
+            errs = {'itm_id': 'Item not found'}
+            return Data({'errors': errs}, should_prepare=False)
+
+        qs = Price.objects.get_or_create(itm=item)
+        rcd = qs[0]
+
+        fld = 'price'
+        price = self.data[fld] if fld in self.data else None
+
+        if price:
+            rcd.price = price
+
+        rcd.save()
+        return rcd
+
+
+class InvoiceResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'id': 'id',
+        'vendor': 'vendor_id',
+        'received': 'received'
+    })
+
+    def is_authenticated(self):
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_invoice')
+        return ok
+
+    # GET /api/invoice/         def list(self):
+
+    # GET /api/invoice/<pk>/
+    def detail(self, pk):
+
+        try:
+            inv = Invoice.objects.get(id=pk)
+        except Invoice.DoesNotExist:
+            errs = {'id': 'Invoice #{} not found'.format(pk)}
+            return Data({'errors': errs}, should_prepare=False)
+
+        return inv
+
+    # POST /api/invoice/
+    def create(self):
+
+        errs = {}
+        v_id = self.data['vendor_id'] if 'vendor_id' in self.data else None
+        if v_id:
+            try:
+                vendor = Supplier.objects.get(id=v_id)
+            except Supplier.DoesNotExist:
+                errs = {'vendor_id': 'Supplier not found'}
+        else:
+            errs = {'vendor_id': 'A supplier is required'}
+
+        if errs:
+            return Data({'errors': errs}, should_prepare=False)
+
+        inv = Invoice(vendor=vendor)
+        inv.save()
+        return inv
+
+    # POST /api/invoice/<pk?    def update(self):
+
+
+class PurchaseResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'id': 'id',
+        'invoice': 'invoice_id',
+        'item': 'item_id',
+        'cost': 'cost'
+    })
+
+    def is_authenticated(self):
+
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_purchase')
+        return ok
+
+    # GET /api/purchase/            def list(self):
+
+    # GET /api/purchase/<pk>/
+    def detail(self, pk):
+
+        try:
+            inv = Purchase.objects.get(id=pk)
+        except Purchase.DoesNotExist:
+            errs = {'id': 'Purchase #{} not found'.format(pk)}
+            return Data({'errors': errs}, should_prepare=False)
+
+        return inv
+
+    # POST /api/purchase/
+    def create(self):
+
+        errs = {}
+        inv_id = self.data['invoice_id'] if 'invoice_id' in self.data else None
+        if inv_id:
+            try:
+                vendor = Invoice.objects.get(id=inv_id)
+            except Invoice.DoesNotExist:
+                errs['invoice_id'] = 'Invoice #{} not found'.format(inv_id)
+        else:
+            errs['invoice_id'] = 'An invoice is required'
+
+        itm_id = self.data['item_id'] if 'item_id' in self.data else None
+        if itm_id:
+            try:
+                item = ItemTemplate.objects.get(identifier_id=itm_id)
+            except ItemTemplate.DoesNotExist:
+                errs['item_id'] = 'Item {} not found'.format(itm_id)
+        else:
+            errs['item_id'] = 'An item is required'
+
+        if errs:
+            return Data({'errors': errs}, should_prepare=False)
+
+        try:
+            pchs = Purchase.objects.get(invoice=vendor, item=item)
+        except Purchase.DoesNotExist:
+            pchs = Purchase(invoice=vendor, item=item)
+
+        val = self.data['cost'] if 'cost' in self.data else None
+        if val:
+            try:
+                cash = decimal.Decimal(val)
+            except decimal.DecimalException:
+                val = None
+        if val:
+            pchs.cost = cash
+
+        pchs.save()
+        return pchs
+
+    # POST /api/purchase/<pk>/      def update(self):

@@ -1,7 +1,7 @@
 from django.test import RequestFactory, TestCase
-from django.template import Context, RequestContext, Template
+from django.template import Context, RequestContext
 
-from ..templatetags.base_tags import *
+from ..templatetags.base_tags import template_filename, user_class, user_initials
 from accounts.models import User
 
 

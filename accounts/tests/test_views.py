@@ -8,8 +8,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from ..views import (CustomUserCreationForm, EmailAddrView,
-                     RegisterConfirmView, PasswordView)
+from ..views import EmailAddrView, RegisterConfirmView, PasswordView
 from ..models import User, UserProfile
 
 
@@ -124,6 +123,7 @@ class AtriumViewTest(TestCase):
             response = self.client.post(self.the_url,
                                         {'usrname': "someoneElse",
                                          'email': "i.am@myPeak.org"})
+            self.assertEqual(response.status_code, 302, "Incorrect status")
             email = mail.outbox[0]
             self.assertTrue(svc_name in email.body)
 

@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block fontspace %}
+  <meta name="Cache-Control" content="no-cache, no-store, must-revalidate">
+{% endblock fontspace %}
+
+{% block linkspace %}
+  <link rel="stylesheet" type="text/css"
+       href="{% static 'inventory/css/purchasing.css' %}" />
+{% endblock linkspace %}
+
+{% block scripts %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+  <script src="{% static 'common/js/backbone.validation.js' %}"></script>
+  <script src="{% static 'inventory/js/supplier.purchasing.js' %}"></script>
+  <script src="{% static 'inventory/js/invoice.purchasing.js' %}"></script>
+  <script src="{% static 'inventory/js/itemTemplate.purchasing.js' %}"></script>
+  <script src="{% static 'inventory/js/purchasing.js' %}"></script>
+{% endblock scripts %}
+
+{% block contents %}
+  <div id="wrapper">
+    <div id="supplierBox">Supplier:&nbsp;
+      <select id="suppliers">
+        <option value="-1">Select a supplier</option>
+      </select>
+      <span class="btn" title="New" tabindex="0">New</span>
+      <div id="formBox"></div>
+    </div>
+    <div id="invoice"></div>
+    <div id="entryBox" class="hidden">
+      <label for="ds">Enter Identifier:</label>
+      <input type="text" size="24" id="ds" name="digitString" />
+      <div class="error"></div>
+    </div>
+    <div id="itemBox"></div>
+    <div id="itemListBox"></div>
+  </div>
+    <template id="editSupplier">
+          <div class="databox">
+            <div class="fields">
+              <div class="lines">
+                <input type="text" title="Name (required)" maxlength="64" value="<%= name %>"
+                       name="name" placeholder="Name (required)" required />
+                <div class="error"></div>
+                <input type="text" title="Street" maxlength="64" value="<%= street %>"
+                       name="street" placeholder="Street" />
+                <input type="text" title="Street 2" maxlength="64" value="<%= street_ext %>"
+                       name="street_ext" placeholder="Street 2" />
+              </div>
+              <div>
+                <input type="text" title="City" maxlength="32" value="<%= city %>"
+                       name="city" placeholder="City" />
+                <input type="text" title="State" size="12" maxlength="12" value="<%= state %>"
+                       name="state" placeholder="State" />
+                <input type="text" size="5" maxlength="5" value="<%= zip5 %>"
+                       title="Enter a five-digit numper"
+                       name="zip5" placeholder="Zip5" />
+                <div class="error"></div>
+              </div>
+              <div>
+                <input type="tel"  size="14" maxlength="16" value="<%= phone_1 %>"
+                       title="Enter a seven- or ten-digit number"
+                       name="phone_1" placeholder="(XXX) XXX-XXXX" />
+                <input type="tel" size="14" maxlength="16" value="<%= phone_2 %>"
+                       title="Enter a seven- or ten-digit number"
+                       name="phone_2" placeholder="(XXX) XXX XXXX" />
+                <div class="error"></div>
+              </div>
+              <label for="notes">Notes:</label>
+              <textarea rows="2" title="Notes (optional)"
+                  name="notes"><%= notes %></textarea>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Save" tabindex="0">Save</span>
+              <span class="btn" title="Cancel" tabindex="0">Cancel</span>
+              <input type="hidden" value="none">
+            </div>
+          </div>
+    </template>
+    <template id="editItemTemplate">
+          <div class="databox">
+            <div class="fields">
+              <div class="lines">
+                <label for="upc"><%= barcode %></label>
+                <span>UPC:&nbsp;</span>
+                <input type="text" id="upc" name="linked_code"
+                       value="<%= linked_code %>" />
+              </div>
+              <div class="lines">
+                <label for="desc">Description:</label>
+                <input type="text" id="desc" name="description" maxlength="120"
+                       value="<%= description %>"
+                       title="Description" required>
+                <div class="error"></div>
+              </div>
+              <div class="lines">
+                <label for="brand">Brand:</label>
+                <input type="text" id="brand" name="brand" maxlength="32" value="<%= brand %>"
+                       title="Brand"
+                       placeholder="Hoffmann, Timeless Treasures, Moda, .... ; Prym, Clover, Dritz, ....">
+              </div>
+              <div class="lines">
+                <label for="content">Content:</label>
+                <input type="text" id="content" name="content" maxlength="32" value="<%= content %>"
+                    title="Content"
+                    placeholder="cotton, crepe de chine, jersey knit, .... ; book, notion, ....">
+              </div>
+              <div>
+                <label for="yardage">Yardage?</label>
+                <input type="checkbox" id="yardage" name="yardage" defaultChecked="false" value="" />
+              </div>
+              <div class="lines">
+                <label for="part_unit">Part Unit:</label>
+                <input type="text" id="part_unit" name="part_unit" maxlength="32" value="<%= part_unit %>"
+                    title="Part Unit"
+                    placeholder="by the yard, panel, 4 yd cut, .... ; unit, ....">
+              </div>
+              <label for="notes">Notes:</label>
+              <textarea rows="2" title="Notes (optional)"
+                  id="notes" name="notes"><%= notes %></textarea>
+            </div>
+            <div class="buttons">
+              <span class="btn" title="Save" tabindex="0">Save</span>
+              <span class="btn" title="Cancel" tabindex="0">Cancel</span>
+            </div>
+          </div>
+    </template>
+    <template id="editItemDetails">
+      <div class="databox">
+        <div class="fields">
+          <div class="lines pad">
+            <span><%= barcode %></span>
+            <span><%= linked_code %></span>
+          </div>
+          <div class="lines pad">
+            <span><%= description %></span>
+          </div>
+          <div class="lines">
+            <label for="units"><%= unit_label %>:</label>
+            <input type="number" id="units" name="units" maxlength="2"
+                   value="<%= units %>" title="Units" class="short"/>
+            <span class="<%= spanclass %>">
+              <label for="eighths">1/8ths:</label>
+              <input type="number" id="eighths" name="eighths" maxlength="1"
+                     value="<%= eighths %>" title="Eighths" class="short"/>
+            </span>
+            <div class="error" data-name="units"></div>
+            <div class="error" data-name="eighths"></div>
+          </div>
+          <div class="lines">
+            <label for="cost">Cost:</label>
+            <input type="number" id="cost" name="cost" value="<%= cost %>"
+                   title="Cost" class="short" />
+            <label for="price">&nbsp;Price:</label>
+            <input type="number" id="price" name="price" value="<%= price %>"
+                   title="Price" class="short" />
+            <div class="error" data-name="cost"></div>
+            <div class="error" data-name="price"></div>
+          </div>
+        </div>
+        <div class="buttons">
+              <span class="btn" title="SaveD" tabindex="0">Save</span>
+              <span class="btn" title="CancelD" tabindex="0">Cancel</span>
+        </div>
+    </template>
+    <template id="showItemTemplate">
+        <div class="group">
+          <div class="fields">
+            <span><%= barcode %></span>
+            <span><%= linked_code %></span>
+            <span><%= part_unit %></span>
+            <div class="desc"><%= description %></div>
+          </div>
+          <div class="buttons">
+            <span class="btn" title="Pictures" tabindex="0">Pictures</span>
+          </div>
+        </div>
+        <div class="imgBox group hidden">
+          <div class="buttons">
+            <div id="btnOne">
+              <span class="btn" title="Add">Add Picture</span>
+            </div>
+            <div id="btnTwo" class="hidden">
+              <span class="btn" title="Save">Save</span>
+              <span class="btn" title="Clear">Clear</span>
+              <label>Choose File
+                <input type="file" name="image" class="hidden" />
+              </label>
+            </div>
+          </div>
+          <div class="gallery"></div>
+          <div id="fileNameSpace"></div>
+        </div>
+    </template>
+{% endblock contents %}
+
+{% block footer %}
+    <div>
+      <script>
+      app.settings = app.settings || {};
+        app.settings.mediaURL = "{% settings_value 'MEDIA_URL' %}";
+        app.purchasing = new app.purchasingView();
+      </script>
+    </div>
+{% endblock footer %}

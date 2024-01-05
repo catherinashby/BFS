@@ -1,12 +1,18 @@
+import copy
 import json
 import sys
+
 from io import StringIO
 from contextlib import contextmanager
+from datetime import date, timedelta
+from decimal import Decimal
+from tempfile import TemporaryDirectory
 
-from django.test import TestCase
+from django.test import TestCase, RequestFactory
 from django.urls import reverse
 
 from accounts.models import User
+from ..apis import BaseResource
 from ..models import Identifier, Location, Supplier, ItemTemplate, Picture
 from ..models import StockBook, Price, Invoice, Purchase
 
@@ -20,6 +26,102 @@ def capture(command, *args, **kwargs):
         yield sys.stdout.read()
     finally:
         sys.stdout = out
+
+
+class BaseResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+
+        cls.rf = RequestFactory()
+        cls.br = BaseResource()
+        return
+
+    def test_wrap_list(self):
+
+        rcds = [{'id': 1, 'name': 'one'},
+                {'id': 2, 'name': 'two'}]
+        d = self.br.wrap_list_response(rcds)
+        self.assertIn('count', d, "'count' key missing")
+        self.assertEqual(d['count'], 2, "should have correct count")
+
+    def test_check_search_criteria(self):
+
+        mdl = Identifier()
+        flds = copy.deepcopy(mdl._meta.fields)
+        for fld in flds:
+            if fld.column == 'barcode':  continue
+            if fld.column == 'linked_code':  continue
+            fld.concrete = False
+            break
+        req = self.rf.get("/resource?barcode=1234&linked_code=5678&not_a=90")
+        self.br.request = req
+        rv = self.br.check_search_criteria(flds)
+        self.assertIn('barcode', rv, "should have 'barcode' field")
+        self.assertIn('linked_code', rv, "should have 'linked_code' field")
+        self.assertNotIn('not_a', rv, "should not have 'not_a' field")
+
+    def test_filter_record(self):
+
+        p = {'barcode': ('CharField', '1000015')}
+        r = Identifier(barcode='1000015')
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+        p = {'uploaded': ('DateField', 'ge:2000-01-01')}
+        r = Picture(uploaded=date.today())
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+        p = {'uploaded': ('DateField', 'bt:2000-01-01,2099-12-31')}
+        r = Picture(uploaded=date.today())
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+        p = {'price': ('DecimalField', 'le:29.99')}
+        r = Price(price=Decimal(7.95))
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+        p = {'price': ('DecimalField', 'bt:4.95,29.99')}
+        r = Price(price=Decimal(7.95))
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+        p = {'item': ('ForeignKey', 'None')}
+        r = Picture()
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+        p = {'units': ('IntegerField', 'lt:5')}
+        r = StockBook(units=3)
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+        p = {'units': ('IntegerField', 'bt:1,9')}
+        r = StockBook(units=5)
+        rv = self.br.filter_record(p, r)
+        self.assertTrue(rv, "should be True")
+
+    def test_compare_values(self):
+
+        rv = self.br.compare_values("or", 1, 2)
+        self.assertFalse(rv, "'or' is not a comparator")
+
+        rv = self.br.compare_values("lt", 5, 25)
+        self.assertTrue(rv, "5 is less than 25")
+
+        rv = self.br.compare_values("le", 15, 15)
+        self.assertTrue(rv, "15 is less-or-equal 15")
+
+        rv = self.br.compare_values("gt", 25, 10)
+        self.assertTrue(rv, "25 is greater than 10")
+
+        rv = self.br.compare_values("ge", 15, 15)
+        self.assertTrue(rv, "15 is greater-or-equal 15")
+
+        rv = self.br.compare_values("bt", 2, 1, 3)
+        self.assertTrue(rv, "2 is greater than 1 and less than 3")
 
 
 class IdentResourceTest(TestCase):
@@ -142,12 +244,21 @@ class LocationResourceTest(TestCase):
 
     def test_list(self):
         url = reverse('location-list')
+
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200, "should return a list")
         d = json.loads(response.content)
         self.assertIn('objects', d, "objects container missing")
         for each in d['objects']:
             self.assertIn('name', each, "should have name field")
+
+        wqs = '{}?name=basket'.format(url)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 1, "should return one record")
+        self.assertEqual(d['objects'][0]['barcode'], '1010', "should return 'Basket 1'")
 
     def test_detail(self):
         pk = 1010
@@ -242,6 +353,14 @@ class SupplierResourceTest(TestCase):
         for each in d['objects']:
             self.assertIn('name', each, "should have name field")
 
+        wqs = '{}?name=choice'.format(url)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 1, "should return one record")
+        self.assertEqual(d['objects'][0]['id'], 1, "should return 'Choice Fabrics'")
+
     def test_detail(self):
         pk = 2
         url = reverse('supplier-detail', kwargs={'pk': pk})
@@ -328,7 +447,14 @@ class ItemTemplateResourceTest(TestCase):
         self.assertIn('objects', d, "objects container missing")
         for each in d['objects']:
             self.assertIn('description', each, "should have description field")
-        return
+
+        wqs = '{}?description=Emerald'.format(url)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 1, "should return one record")
+        self.assertEqual(d['objects'][0]['barcode'], '1000002', "should return 'Emerald City'")
 
     def test_detail(self):
 
@@ -345,8 +471,8 @@ class ItemTemplateResourceTest(TestCase):
 
         item = {'brand': 'Windham',
                 'content': 'Cotton Fabric',
-                'part_unit': 'By the Yard',
-                'yardage': True}
+                'part_unit': 'By the Yard'
+                }
         url = reverse('item-list')
         response = self.client.post(url, {'description': 'A La Carte'},
                                     content_type="application/json")
@@ -372,6 +498,7 @@ class ItemTemplateResourceTest(TestCase):
 
         item['linked_code'] = '0006151620418'
         item['description'] = 'Comfort and Joy'
+        item['yardage'] = True
         response = self.client.post(url, item, content_type="application/json")
         self.assertEqual(response.status_code, 201, "should return 'Created'")
 
@@ -390,6 +517,7 @@ class ItemTemplateResourceTest(TestCase):
         self.assertEqual(response.status_code, 202, "should return 'Accepted'")
 
         item['linked_code'] = '0006151620418'
+        item['out_of_stock'] = True
         change = json.dumps(item)
         response = self.client.put(url, change)
         self.assertEqual(response.status_code, 202, "should return 'Accepted'")
@@ -398,6 +526,12 @@ class ItemTemplateResourceTest(TestCase):
         change = json.dumps(item)
         response = self.client.put(url, change)
         self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+
+        change = json.dumps({'label': 'Dritz'})
+        response = self.client.put(url, change)
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertNotIn('label', d, ";label' field should not be in record")
 
         item['description'] = 'Mountains of Mist'
         change = json.dumps(item)
@@ -429,6 +563,125 @@ class ItemTemplateResourceTest(TestCase):
                              "Expected dummy print statement")
 
 
+class ItemDataResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           is_superuser=True,
+                                           password='rubySlippers')
+        cls.barcode = '1000002'
+        cls.badID = '1000022'
+        cls.item = Identifier.idents.create(barcode=cls.barcode)
+        vendor = Supplier.objects.create(name='My supplier')
+        invoice = Invoice.objects.create(vendor=vendor)
+        cls.invc = invoice.id
+        cls.badInvc = 55
+        ItemTemplate.objects.create(description='Emerald City',
+                                    identifier=cls.item)
+
+    def test_detail(self):
+
+        url = reverse('itemdata-detail', kwargs={'digitstring': 'trial'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return an error")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('digitstring', d['errors'], "digitstring error missing")
+        self.assertEqual(d['errors']['digitstring'], "Must be a string of digits")
+
+        pk = '1001954'
+        url = reverse('itemdata-detail', kwargs={'digitstring': pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return one-keypair")
+        d = json.loads(response.content)
+        self.assertEqual(len(d), 1, "should contain only one field")
+        self.assertIn('digitstring', d, "Should return digitstring")
+
+        pk = '1000002'
+        url = reverse('itemdata-detail', kwargs={'digitstring': pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return an item")
+        d = json.loads(response.content)
+        self.assertEqual(d['barcode'], pk, "Identifiers should match")
+
+    def test_create(self):
+
+        url = reverse('itemdata-list')
+        response = self.client.post(url, {'name': 'bitmap'},
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {'description': ''},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('item', d['errors'], "item error missing")
+        self.assertEqual(d['errors']['item'], "No item ID")
+
+        response = self.client.post(url, {'item': self.badID},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('item', d['errors'], "item error missing")
+        self.assertEqual(d['errors']['item'], "Item not found")
+
+        response = self.client.post(url, {'item': self.barcode,},
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 201, "should return 'Created'")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'price': '7.99',
+                                          'units': 5, 'eighths': 2},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('StockBook', d, "StockBook tag missing")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'cost': '2.99',
+                                          'units': 5, 'eighths': 2},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('invoice', d['errors'], "invoice error missing")
+        self.assertEqual(d['errors']['invoice'], "No invoice ID")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'cost': '2.99', 'invoice': self.badInvc},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('invoice', d['errors'], "invoice error missing")
+        self.assertEqual(d['errors']['invoice'], "Invoice not found")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'cost': '2.99', 'invoice': self.invc},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('purchase', d, "Purchase tag missing")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'cost': '2.99', 'invoice': self.invc},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('purchase', d, "Purchase tag missing")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'price': '7.99'},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('price', d, "Price tag missing")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'price': '19.99'},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('price', d, "Price tag missing")
+
+
 class PictureResourceTest(TestCase):
 
     @classmethod
@@ -440,12 +693,15 @@ class PictureResourceTest(TestCase):
                                            password='rubySlippers')
         cls.badID = '1000011'
         cls.itmID = '1000002'
+        cls.itmID2 = '1000028'
         ItemTemplate.objects.create(description='Small Bitmap',
                                     identifier=Identifier.idents.create(barcode=cls.itmID))
-        dataFile = 'inventory/tests/data/small.bmp'
-        cls.pic1 = Picture.objects.create(photo=dataFile)
-        cls.pic2 = Picture.objects.create(photo=dataFile)
-        return
+        itm = ItemTemplate.objects.create(description='Another Bitmap',
+                                          identifier=Identifier.idents.create(barcode=cls.itmID2))
+        cls.image_file = 'inventory/tests/data/small.bmp'
+        Picture.objects.create(photo=cls.image_file)
+        Picture.objects.create(photo=cls.image_file)
+        Picture.objects.create(photo=cls.image_file, item=itm)
 
     def test_list(self):
         url = reverse('picture-list')
@@ -456,6 +712,39 @@ class PictureResourceTest(TestCase):
         for each in d['objects']:
             self.assertIn('photo', each, "should have photo field")
 
+        wqs = '{}?item=None'.format(url)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 2, "should return two records")
+        self.assertEqual(d['objects'][0]['item_id'], None, "should return unlinked records")
+
+        wqs = '{0}?item={1}'.format(url, self.itmID2)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['objects'][0]['item_id'], self.itmID2, "should return linked record")
+
+        now = date.today()
+        datestr = now.strftime("%Y-%m-%d")
+        wqs = '{0}?uploaded=le:{1}'.format(url, datestr)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 3, "should return three records")
+
+        now += timedelta(days=2)
+        datestr = now.strftime("%Y-%m-%d")
+        wqs = '{0}?uploaded=eq:{1}'.format(url, datestr)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 0, "should return empty list")
+
     def test_detail(self):
         pk = 2
         url = reverse('picture-detail', kwargs={'pk': pk})
@@ -463,6 +752,30 @@ class PictureResourceTest(TestCase):
         self.assertEqual(response.status_code, 200, "should return a picture")
         d = json.loads(response.content)
         self.assertIn('photo', d, "key field missing")
+
+    def test_create(self):
+        url = reverse('picture-list')
+        response = self.client.post(url, {'name': 'bitmap'},
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {'description': ''},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('photo', d['errors'], "photo error missing")
+        self.assertEqual(d['errors']['photo'], "No file uploaded")
+
+        with TemporaryDirectory() as tmpdirname:
+            with self.settings(MEDIA_ROOT=tmpdirname):
+                with open(self.image_file, 'rb') as fp:
+                    response = self.client.post(url, {'photo': fp});
+                    d = json.loads(response.content)
+
+        self.assertEqual(response.status_code, 201, "should return 'Created'")
+        d = json.loads(response.content)
+        self.assertIn('photo', d, "should return filename" )
 
     def test_update(self):
         pk = 1
@@ -510,11 +823,17 @@ class StockBookResourceTest(TestCase):
                                            is_superuser=True,
                                            password='rubySlippers')
         cls.locID = '1007'
+        cls.locID2 = '1010'
         cls.itmID = '1000002'
         cls.itm2 = '1000015'
         cls.itm3 = '1000028'
+        cls.itm4 = '1000031'
         l1 = Location.objects.create(
+                    name='here',
                     identifier=Identifier.idents.create(barcode=cls.locID))
+        l2 = Location.objects.create(
+                    name='there',
+                    identifier=Identifier.idents.create(barcode=cls.locID2))
         i1 = ItemTemplate.objects.create(
                     description='Bolt of Fabric',
                     identifier=Identifier.idents.create(barcode=cls.itmID))
@@ -526,7 +845,12 @@ class StockBookResourceTest(TestCase):
                     description='Another Item',
                     yardage=False,
                     identifier=Identifier.idents.create(barcode=cls.itm3))
+        ItemTemplate.objects.create(
+                    description='And one more',
+                    yardage=False,
+                    identifier=Identifier.idents.create(barcode=cls.itm4))
         StockBook.objects.create(itm=i1, loc=l1)
+        StockBook.objects.create(itm=i2, loc=l2)
 
     def test_detail(self):
         url = reverse('stock-detail', kwargs={'pk': 1000})
@@ -537,7 +861,7 @@ class StockBookResourceTest(TestCase):
         self.assertIn('itm_id', d['errors'], "itm_id error missing")
         self.assertEqual(d['errors']['itm_id'], "Item not found")
 
-        url = reverse('stock-detail', kwargs={'pk': self.itm2})
+        url = reverse('stock-detail', kwargs={'pk': self.itm3})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200, "should return an error")
         d = json.loads(response.content)
@@ -552,7 +876,6 @@ class StockBookResourceTest(TestCase):
         self.assertNotIn('errors', d, "errors container found")
         self.assertIn('itm', d, "itm field missing")
         self.assertEqual(d['itm'], self.itmID)
-        return
 
     def test_list(self):
 
@@ -563,7 +886,14 @@ class StockBookResourceTest(TestCase):
         self.assertIn('objects', d, "objects container missing")
         for each in d['objects']:
             self.assertIn('created', each, "should have 'created' field")
-        return
+
+        wqs = '{0}?loc={1}'.format(url, self.locID)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 1, "should return one record")
+        self.assertEqual(d['objects'][0]['loc'], self.locID, "should return location")
 
     def test_create(self):
         url = reverse('stock-list')
@@ -593,26 +923,24 @@ class StockBookResourceTest(TestCase):
         self.assertIn('itm_id', d['errors'], "itm_id error missing")
         self.assertEqual(d['errors']['itm_id'], "Record already exists")
 
-        response = self.client.post(url, {'itm_id': self.itm2, 'loc_id': 'far'},
+        response = self.client.post(url, {'itm_id': self.itm3, 'loc_id': 'far'},
                                     content_type="application/json")
         d = json.loads(response.content)
         self.assertIn('errors', d, "errors container missing")
         self.assertIn('loc_id', d['errors'], "loc_id error missing")
         self.assertEqual(d['errors']['loc_id'], "Location not found")
 
-        response = self.client.post(url, {'itm_id': self.itm2, 'loc_id': self.locID},
+        response = self.client.post(url, {'itm_id': self.itm3, 'loc_id': self.locID},
                                     content_type="application/json")
         d = json.loads(response.content)
         self.assertNotIn('errors', d, "errors container found")
         self.assertIn('created', d, "'created' field missing")
 
-        response = self.client.post(url, {'itm_id': self.itm3, 'units': 4},
+        response = self.client.post(url, {'itm_id': self.itm4, 'units': 4},
                                     content_type="application/json")
         d = json.loads(response.content)
         self.assertNotIn('errors', d, "errors container found")
         self.assertIn('units', d, "units field missing")
-
-        return
 
     def test_update(self):
 
@@ -654,8 +982,6 @@ class StockBookResourceTest(TestCase):
         self.assertIn('eighths', d, "eighths field missing")
         self.assertEqual(d['eighths'], 4, "Eighths should be set")
 
-        return
-
 
 class PriceResourceTest(TestCase):
 
@@ -668,19 +994,27 @@ class PriceResourceTest(TestCase):
                                            password='rubySlippers')
         cls.itmID = '1000002'
         cls.itm2 = '1000015'
+        cls.itm3 = '1000028'
+        cls.itmNF = '1000090'
         cls.amount = 7.99
+        cls.expensive = 24.99
         i1 = ItemTemplate.objects.create(
                     description='Bolt of Fabric',
                     identifier=Identifier.idents.create(barcode=cls.itmID))
         i2 = ItemTemplate.objects.create(
-                    description='Inventoried Item',
+                    description='Fabric Panel',
                     yardage=False,
                     identifier=Identifier.idents.create(barcode=cls.itm2))
-        Price.objects.create(itm=i1, price=cls.amount)
+        i3 = ItemTemplate.objects.create(
+                    description='Inventoried Item',
+                    yardage=False,
+                    identifier=Identifier.idents.create(barcode=cls.itm3))
+        Price.objects.create(itm=i1, price=cls.expensive)
+        Price.objects.create(itm=i2, price=cls.amount)
         return
 
     def test_detail(self):
-        url = reverse('price-detail', kwargs={'pk': 1000})
+        url = reverse('price-detail', kwargs={'pk': self.itmNF})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200, "should return an error")
         d = json.loads(response.content)
@@ -688,7 +1022,7 @@ class PriceResourceTest(TestCase):
         self.assertIn('itm_id', d['errors'], "itm_id error missing")
         self.assertEqual(d['errors']['itm_id'], "Item not found")
 
-        url = reverse('price-detail', kwargs={'pk': self.itm2})
+        url = reverse('price-detail', kwargs={'pk': self.itm3})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200, "should return an error")
         d = json.loads(response.content)
@@ -703,12 +1037,63 @@ class PriceResourceTest(TestCase):
         self.assertNotIn('errors', d, "errors container found")
         self.assertIn('itm', d, "itm field missing")
         self.assertEqual(d['itm'], self.itmID)
-        self.assertEqual(d['price'], '{}'.format(self.amount))
-        return
+        self.assertEqual(d['price'], '{}'.format(self.expensive))
+
+    def test_list(self):
+
+        url = reverse('price-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        for each in d['objects']:
+            self.assertIn('created', each, "should have 'created' field")
+
+        wqs = '{0}?price=ge:{1}'.format(url, self.expensive)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 1, "should return one record")
+
+    def test_create(self):
+        url = reverse('price-list')
+        response = self.client.post(url, {'item': 'record'},
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {'item': 'record'},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('itm_id', d['errors'], "itm_id error missing")
+        self.assertEqual(d['errors']['itm_id'], "No item ID received")
+
+        response = self.client.post(url, {'itm_id': self.itmNF},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('itm_id', d['errors'], "itm_id error missing")
+        self.assertEqual(d['errors']['itm_id'], "Item not found")
+
+        response = self.client.post(url, {'itm_id': self.itmID},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('itm_id', d['errors'], "itm_id error missing")
+        self.assertEqual(d['errors']['itm_id'], "Record already exists")
+
+        response = self.client.post(url, {'itm_id': self.itm3,
+                                          'price': self.amount},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "errors container found")
+        self.assertIn('price', d, "price field missing")
 
     def test_update(self):
 
-        url = reverse('price-detail', kwargs={'pk': 1000})
+        url = reverse('price-detail', kwargs={'pk': self.itmNF})
         response = self.client.put(url, 'Invalid item ID')
         self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
 
@@ -720,7 +1105,7 @@ class PriceResourceTest(TestCase):
         self.assertIn('itm_id', d['errors'], "itm_id error missing")
         self.assertEqual(d['errors']['itm_id'], "Item not found")
 
-        url = reverse('price-detail', kwargs={'pk': self.itm2})
+        url = reverse('price-detail', kwargs={'pk': self.itm3})
         change = json.dumps({'discount': 10})
         response = self.client.put(url, change)
         self.assertEqual(response.status_code, 202, "should return 'Accepted'")
@@ -729,7 +1114,7 @@ class PriceResourceTest(TestCase):
         self.assertIn('price', d, "price field missing")
         self.assertIsNone(d['price'], "price field set")
 
-        url = reverse('price-detail', kwargs={'pk': self.itm2})
+        url = reverse('price-detail', kwargs={'pk': self.itm3})
         amount = '0.99'
         change = json.dumps({'price': amount})
         response = self.client.put(url, change)
@@ -738,8 +1123,6 @@ class PriceResourceTest(TestCase):
         self.assertNotIn('errors', d, "errors container found")
         self.assertIn('price', d, "price field missing")
         self.assertEqual(d['price'], amount)
-
-        return
 
 
 class InvoiceResourceTest(TestCase):
@@ -751,9 +1134,12 @@ class InvoiceResourceTest(TestCase):
                                            is_active=True,
                                            is_superuser=True,
                                            password='rubySlippers')
-        sup1 = Supplier.objects.create(name='Milltown')
-        sup2 = Supplier.objects.create(name='Bedoses Fabric')
-        inv101 = Invoice.objects.create(id=101, vendor=sup1)
+        cls.sup1 = Supplier.objects.create(name='Milltown')
+        cls.sup2 = Supplier.objects.create(name='Bedoses Fabric')
+        inv101 = Invoice.objects.create(id=101, vendor=cls.sup1)
+        inv102 = Invoice.objects.create(id=102, vendor=cls.sup1)
+        inv103 = Invoice.objects.create(id=103, vendor=cls.sup2)
+        inv104 = Invoice.objects.create(id=104, vendor=cls.sup2)
         return
 
     def test_detail(self):
@@ -774,6 +1160,24 @@ class InvoiceResourceTest(TestCase):
         self.assertIn('id', d, "id field missing")
         self.assertIn('vendor', d, "vendor field missing")
         self.assertEqual(d['id'], 101)
+
+    def test_list(self):
+
+        url = reverse('invoice-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        for each in d['objects']:
+            self.assertIn('received', each, "should have 'received' field")
+
+        wqs = '{0}?vendor={1}'.format(url, self.sup1.id)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 2, "should return two records")
+        self.assertEqual(d['objects'][0]['vendor'], self.sup1.id, "should return vendor")
 
     def test_create(self):
 
@@ -803,7 +1207,7 @@ class InvoiceResourceTest(TestCase):
         self.assertNotIn('errors', d, "errors container found")
         self.assertIn('id', d, "id field missing")
         self.assertIn('received', d, "received field missing")
-        self.assertEqual(d['id'], 102)
+        self.assertEqual(d['id'], 105)
 
 
 class PurchaseResourceTest(TestCase):
@@ -819,6 +1223,7 @@ class PurchaseResourceTest(TestCase):
         sup2 = Supplier.objects.create(name='Bedoses Fabric')
         inv101 = Invoice.objects.create(id=101, vendor=sup1)
         inv102 = Invoice.objects.create(id=102, vendor=sup2)
+        inv103 = Invoice.objects.create(id=103, vendor=sup2)
         itm2 = ItemTemplate.objects.create(
                     description='Emerald City',
                     identifier=Identifier.idents.create(barcode='1000002'))
@@ -826,18 +1231,21 @@ class PurchaseResourceTest(TestCase):
                     description='Fields of Popae',
                     identifier=Identifier.idents.create(barcode='1000028'))
         cls.pchs = Purchase.objects.create(invoice=inv101, item=itm2)
+        Purchase.objects.create(invoice=inv101, item=itm28)
+        Purchase.objects.create(invoice=inv103, item=itm2)
+        cls.inv1 = inv101
         cls.inv2 = inv102
         cls.itm28 = itm28
 
     def test_detail(self):
 
-        url = reverse('purchase-detail', kwargs={'pk': 3})
+        url = reverse('purchase-detail', kwargs={'pk': 5})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200, "should return an error")
         d = json.loads(response.content)
         self.assertIn('errors', d, "errors container missing")
         self.assertIn('id', d['errors'], "id error missing")
-        self.assertEqual(d['errors']['id'], "Purchase #3 not found")
+        self.assertEqual(d['errors']['id'], "Purchase #5 not found")
 
         url = reverse('purchase-detail', kwargs={'pk': 1})
         response = self.client.get(url)
@@ -847,6 +1255,24 @@ class PurchaseResourceTest(TestCase):
         self.assertEqual(d['invoice'], self.pchs.invoice_id)
         self.assertIn('item', d, "item id missing")
         self.assertEqual(d['item'], self.pchs.item_id)
+
+    def test_list(self):
+
+        url = reverse('purchase-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        for each in d['objects']:
+            self.assertIn('cost', each, "should have 'cost' field")
+
+        wqs = '{0}?invoice={1}'.format(url, self.inv1.id)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 2, "should return two records")
+        self.assertEqual(d['objects'][0]['invoice'], self.inv1.id, "should return invoice")
 
     def test_create(self):
 
@@ -902,3 +1328,35 @@ class PurchaseResourceTest(TestCase):
         self.assertEqual(d['invoice'], order['invoice_id'])
         self.assertEqual(d['item'], order['item_id'])
         self.assertEqual(d['cost'], order['cost'])
+
+    def test_update(self):
+
+        url = reverse('purchase-detail', kwargs={'pk': 5})
+        response = self.client.put(url, "Non-existent record")
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        change = json.dumps({'cost': '19.95'});
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('id', d['errors'], "id error missing")
+        self.assertEqual(d['errors']['id'], "Purchase #5 not found")
+
+        url = reverse('purchase-detail', kwargs={'pk': 1})
+        response = self.client.put(url, json.dumps({'item': 28}))
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertNotEqual(d['item'], 28, "item should not be changed")
+
+        response = self.client.put(url, change)
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertEqual(d['cost'], '19.95', "cost should be changed")
+
+        response = self.client.put(url, json.dumps({'cost': '-10%'}))
+        self.assertEqual(response.status_code, 202, "should return 'Accepted'")
+        d = json.loads(response.content)
+        self.assertEqual(d['cost'], '19.95', "cost should not be changed")
+
+        return

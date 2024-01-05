@@ -148,12 +148,13 @@ class ImagesUploadTest(TestCase):
 
         cls.rf = RequestFactory()
         cls.image_file = 'kernel/static/img/BFS_spool.png'
+        cls.itmID = '1000002'
 
     def test_upload_image(self):
 
         url = reverse('images-upload')
 
-        req = self.rf.post(url, {'key': 'value'})
+        req = self.rf.post(url, {'key': 'value', 'item_id': self.itmID})
         resp = images_upload(req)
         self.assertIsInstance(resp, JsonResponse, "should be a JsonResponse")
         d = json.loads(resp.content)
@@ -188,3 +189,26 @@ class StockBookViewTest(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.template_name, 'inventory/stockBook.html')
+
+
+class PurchasingViewTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           password='rubySlippers')
+
+    def test_Purchasing_page(self):
+
+        url = reverse('purchasing')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith(reverse('log_in')),
+                        "purchasing should not be available without logging in")
+
+        self.client.force_login(self.usr)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.template_name[0], 'inventory/purchasing.html')

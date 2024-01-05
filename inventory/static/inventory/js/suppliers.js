@@ -1,8 +1,8 @@
 //
-Backbone.View.prototype.close = function(){
+Backbone.View.prototype.close = function () {
   this.remove();
   this.unbind();
-  if (this.onClose){
+  if (this.onClose) {
     this.onClose();
   }
 }
@@ -10,16 +10,16 @@ var app = app || {};
 
 app.supplier = Backbone.Model.extend({
     defaults: {
-        'id': null,
-        'name': null,
-        'street': null,
-        'street_ext': null,
-        'city': null,
-        'state': null,
-        'zip5': null,
-        'phone_1': null,
-        'phone_2': null,
-        'notes': null
+        id: null,
+        name: null,
+        street: null,
+        street_ext: null,
+        city: null,
+        state: null,
+        zip5: null,
+        phone_1: null,
+        phone_2: null,
+        notes: null
     }
 });
 
@@ -38,136 +38,141 @@ app.supplierView = Backbone.View.extend({
         'click span.btn[title="Edit"]': 'editSupplier',
         'keyup span.btn[title="Edit"]': 'editKey',
         'click span.btn[title="Save"]': 'saveChange',
-        'keyup span.btn[title="Save"]': 'saveKey',
+        'keyup span.btn[title="Save"]': 'saveKey'
     },
     validations: {
-        'name': { 'name': 'required', 'message': 'A name is required.' },
-        'zip5': [
-                   { 'name': 'required', 'args': [ false ] },
-                   { 'name': 'pattern', 'args': [ /^\d{5}$/ ],
-                     'message': 'Please enter a five-digit zipcode.' }
-                ],
-        'phone_1': [
-                   { 'name': 'required', 'args': [ false ] },
-                   { 'name': 'pattern', 'message': 'Enter a 7- or 10-digit number',
-                     'args': [ /^(\(?(\d{3})\)?[- ]?)?(\d{3})[- ]?(\d{4})$/ ] }
-                   ],
-        'phone_2': [
-                   { 'name': 'required', 'args': [ false ] },
-                   { 'name': 'pattern', 'message': 'Enter a 7- or 10-digit number',
-                     'args': [ /^(\(?(\d{3})\)?[- ]?)?(\d{3})[- ]?(\d{4})$/ ] }
-                   ]
+        name: { name: 'required', message: 'A name is required.' },
+        zip5: [
+                 { name: 'required', args: [false] },
+                 {
+                 name: 'pattern',
+                 args: [/^\d{5}$/],
+                 message: 'Please enter a five-digit zipcode.'
+                 }
+               ],
+        phone_1: [
+                   { name: 'required', args: [false] },
+                   {
+                   name: 'pattern',
+                   message: 'Enter a 7- or 10-digit number',
+                   args: [/^(\(?(\d{3})\)?[- ]?)?(\d{3})[- ]?(\d{4})$/]
+                   }
+                 ],
+        phone_2: [
+                   { name: 'required', args: [false] },
+                   {
+                   name: 'pattern',
+                   message: 'Enter a 7- or 10-digit number',
+                   args: [/^(\(?(\d{3})\)?[- ]?)?(\d{3})[- ]?(\d{4})$/]
+                   }
+                 ]
     },
     initialize: function () {
         this.listenTo(this.model, 'change', this.render);
-        return;
     },
-    cancelChange: function()    {
-        var num = this.model.get('id');
-        if ( num )   {    // was editing a known supplier
+    cancelChange: function () {
+        const num = this.model.get('id');
+        if (num) { // was editing a known supplier
             this.render();
-        } else {        // was adding a new supplier
+        } else { // was adding a new supplier
             this.close();
         }
     },
-    cancelKey: function(e)   {
-        if ( e.keyCode == 13 )  {
+    cancelKey: function (e) {
+        if (e.keyCode === 13) {
             this.cancelChange();
         }
-        return;
     },
-    checkForm: function()    {
-        var data = this.el.querySelectorAll( 'input,textarea' );
-        var changes = Backbone.Validation.checkForm( this.validations, data, this.model );
+    checkForm: function () {
+        const data = this.el.querySelectorAll('input,textarea');
+        const changes = Backbone.Validation.checkForm(this.validations, data, this.model);
         // display errors, if any
-        var dest = this.el.querySelectorAll( 'div.error' );
-        dest.forEach(function(el) { el.innerHTML = ''; });
-        data.forEach(function(el) {
-            if ( !el.classList.contains( 'invalid' ) )  return;
-            var msg = el.getAttribute( 'data-error' );
-            dest = el.parentElement.querySelector( 'div.error' );
+        let dest = this.el.querySelectorAll('div.error');
+        dest.forEach(function (el) { el.innerHTML = ''; });
+        data.forEach(function (el) {
+            if (!el.classList.contains('invalid')) return;
+            const msg = el.getAttribute('data-error');
+            dest = el.parentElement.querySelector('div.error');
             dest.innerHTML = msg;
         });
         return changes;
     },
-    editKey: function(e)   {
-        if ( e.keyCode == 13 )  {
+    editKey: function (e) {
+        if (e.keyCode === 13) {
             this.editSupplier();
         }
-        return;
     },
-    editSupplier: function()    {
-        var editing = this.el.parentElement.querySelector('span.btn[title="Save"]');
-        if (editing)   return;
+    editSupplier: function () {
+        const editing = this.el.parentElement.querySelector('span.btn[title="Save"]');
+        if (editing) return;
 
-        var lv = this.renderEdit();
-        fld = lv.el.querySelector("input[name='name']");
+        const lv = this.renderEdit();
+        const fld = lv.el.querySelector("input[name='name']");
         fld.focus();
-        return;
     },
-    saveChange: function()    {
-        var changes = this.checkForm();
-        if ( !changes )  return;        //  errors found
-        if ( !Object.keys(changes).length )  {  //  no errors, but no changes
+    saveChange: function () {
+        const changes = this.checkForm();
+        if (!changes) return; //  errors found
+        if (!Object.keys(changes).length) { //  no errors, but no changes
           this.cancelChange();
           return;
         }
-        opts = { 'wait': true, 'view': this,
-                'template': this.editTemplate,
-                'success': this.serverResponse };
+        const opts = {
+                     wait: true,
+                     view: this,
+                     template: this.editTemplate,
+                     success: this.serverResponse
+                     };
         this.model.save(changes, opts);
-        return;
     },
-    saveKey: function(e)   {
-        if ( e.keyCode == 13 )  {
+    saveKey: function (e) {
+        if (e.keyCode === 13) {
             this.saveChange();
         }
-        return;
     },
-    serverResponse: function( model, response, options )  {
-        if ( 'id' in response ) {    //  success
-            let isNew = ( model._previousAttributes.id == null );
-            if ( isNew )    {
-                model.grouping.add( model );
+    serverResponse: function (model, response, options) {
+        if ('id' in response) { //  success
+            const isNew = (model._previousAttributes.id == null);
+            if (isNew) {
+                model.grouping.add(model);
             }
         } else {
             //  we have errors; re-display the form
-            options.view.$el.html( options.template(model.attributes) );
-            var box = options.view.el;
-            var errs = response.errors;
+            options.view.$el.html(options.template(model.attributes));
+            const box = options.view.el;
+            const errs = response.errors;
 //
-            for ( var fld in errs ) {
-                let msg = errs[fld];
-                let selector = 'input[name="' + fld + '"]';
-                let src = box.querySelector( selector );
-                src.classList.add( 'invalid' );
-                src.setAttribute( 'data-error', msg );
-                let dest = box.querySelector('div.error');
+            for (const fld in errs) {
+                const msg = errs[fld];
+                const selector = 'input[name="' + fld + '"]';
+                const src = box.querySelector(selector);
+                src.classList.add('invalid');
+                src.setAttribute('data-error', msg);
+                const dest = box.querySelector('div.error');
                 dest.innerHTML = msg;
                 //  reset the model to last correct value
                 model.attributes[fld] = model._previousAttributes[fld];
             }
         }
-        return;
     },
-    render: function()    {
-        if (this.showTemplate == null)  {
-            var ctxt = $('#showBox').html();
-            var tmplt = _.unescape( ctxt );
-            this.showTemplate = _.template( tmplt );
+    render: function () {
+        if (this.showTemplate == null) {
+            const ctxt = $('#showBox').html();
+            const tmplt = _.unescape(ctxt);
+            this.showTemplate = _.template(tmplt);
         }
-        var supView = this.showTemplate( this.model.attributes );
-        this.$el.html( supView );
+        const supView = this.showTemplate(this.model.attributes);
+        this.$el.html(supView);
       return this;
     },
-    renderEdit: function()    {
-        if (this.editTemplate == null)  {
-            var ctxt = $('#editBox').html();
-            var tmplt = _.unescape( ctxt );
-            this.editTemplate = _.template( tmplt );
+    renderEdit: function () {
+        if (this.editTemplate == null) {
+            const ctxt = $('#editBox').html();
+            const tmplt = _.unescape(ctxt);
+            this.editTemplate = _.template(tmplt);
         }
-        var supView = this.editTemplate( this.model.attributes );
-        this.$el.html( supView );
+        const supView = this.editTemplate(this.model.attributes);
+        this.$el.html(supView);
       return this;
     }
 });
@@ -177,53 +182,51 @@ app.supplierListView = Backbone.View.extend({
     events: {
         'click #wrapper button[title="Add"]': 'addSupplier'
     },
-    initialize: function(sups)  {
+    initialize: function (sups) {
         this.body = this.el.querySelector('div.bodyspace');
         this.collection = new app.supplierList(sups);
         this.render();
     },
-    addSupplier: function()  {
-        var editing = this.body.querySelector('span.btn[title="Save"]');
-        if (editing)   return;
+    addSupplier: function () {
+        const editing = this.body.querySelector('span.btn[title="Save"]');
+        if (editing) return;
 //
-        var fld = this.body.querySelector('div.noContent');
-        if ( fld )  {
-            this.body.removeChild( fld );
+        let fld = this.body.querySelector('div.noContent');
+        if (fld) {
+            this.body.removeChild(fld);
         }
-        var item = new app.supplier();
+        const item = new app.supplier();
         item.urlRoot = app.supplierList.prototype.url;
         item.grouping = this.collection;
-        var supView = new app.supplierView({
-			model: item,
+        const supView = new app.supplierView({
+            model: item,
             collection: this.collection
         });
-        var lv = supView.renderEdit();
+        const lv = supView.renderEdit();
         fld = lv.el.querySelector('input[name="name"]');
-        this.body.appendChild( lv.el );
+        this.body.appendChild(lv.el);
         fld.focus();
     },
-    render: function()  {
+    render: function () {
         if (this.collection.length) {
-            while (this.body.children.length)   {
+            while (this.body.children.length) {
                 this.body.removeChild(this.body.children[0]);
             }
-            this.collection.each(function( item ) {
-                this.renderSupplier( item );
-            }, this );
+            this.collection.each(function (item) {
+                this.renderSupplier(item);
+            }, this);
         } else {
-            var nC = document.createElement('div');
+            const nC = document.createElement('div');
             nC.setAttribute('class', 'noContent');
             nC.appendChild(document.createTextNode('No suppliers found'));
-            this.body.appendChild( nC );
+            this.body.appendChild(nC);
         }
     },
-    renderSupplier: function(item)  {
-        var supView = new app.supplierView({
-			model: item
+    renderSupplier: function (item) {
+        const supView = new app.supplierView({
+            model: item
         });
-        var lv = supView.render();
-        this.body.appendChild( lv.el );
+        const lv = supView.render();
+        this.body.appendChild(lv.el);
     }
 });
-
-//

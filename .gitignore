@@ -137,6 +137,8 @@ dmypy.json
 *.psproj
 # sqlite3 databases
 *.db3
+# NodeJS
+.eslintrc.json
 
 # and
 setup.cfg

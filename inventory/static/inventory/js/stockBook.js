@@ -1,8 +1,8 @@
 //
-Backbone.View.prototype.close = function(){
+Backbone.View.prototype.close = function () {
   this.remove();
   this.unbind();
-  if (this.onClose){
+  if (this.onClose) {
     this.onClose();
   }
 }
@@ -10,14 +10,14 @@ var app = app || {};
 
 app.location = Backbone.Model.extend({
     defaults: {
-        'name': null,
-        'identifier': null,
-        'description': null
+        name: null,
+        identifier: null,
+        description: null
     },
     idAttribute: 'identifier',
-    initialize: function()  {
-        this.on("change:identifier", function() {
-            var ds = this.get('identifier');
+    initialize: function () {
+        this.on('change:identifier', function () {
+            const ds = this.get('identifier');
             this.url = '/inventory/api/location/' + ds;
             this.fetch();
         });
@@ -26,9 +26,9 @@ app.location = Backbone.Model.extend({
 
 app.itmTmplt = Backbone.Model.extend({
     defaults: {
-        'identifier': null
-       ,'description': null
-       ,'brand': null
+        identifier: null,
+       description: null,
+       brand: null
 //       ,'content': null
 //       ,'part_unit': null
 //       ,'yardage': null
@@ -41,29 +41,28 @@ app.itmTmplt = Backbone.Model.extend({
 app.itmTmpltList = Backbone.Collection.extend({
     model: app.itmTmplt,
     url: '/inventory/api/item',
-    addID: function(ident)   {
-        let mdl = new this.model();
+    addID: function (ident) {
+        const mdl = new this.model();
         mdl.url = this.url + '/' + ident;
         mdl.fetch({
-            'collection': this,
-            'success':function(model, response, options){
-                let coll = options.collection;
+            collection: this,
+            success: function (model, response, options) {
+                const coll = options.collection;
                 coll.add(response);
             }
         });
-        return;
     }
 });
 
 app.stockRecord = Backbone.Model.extend({
     defaults: {
-        'itm_id': null,
-        'loc_id': null
+        itm_id: null,
+        loc_id: null
     },
     idAttribute: 'itm_id',
-    initialize: function()  {
-        this.on("change:itm_id", function() {
-            var id = this.get("itm_id");
+    initialize: function () {
+        this.on('change:itm_id', function () {
+            const id = this.get('itm_id');
             this.url = '/inventory/api/stock/' + id;
         });
     }
@@ -71,14 +70,14 @@ app.stockRecord = Backbone.Model.extend({
 
 app.dataEntry = Backbone.Model.extend({
     defaults: {
-        'identifier': null,
-        'digitstring': null,
-        'type': null
+        identifier: null,
+        digitstring: null,
+        type: null
     },
     idAttribute: 'identifier',
-    initialize: function()  {
-        this.on("change:digitstring", function() {
-            var ds = this.get('digitstring');
+    initialize: function () {
+        this.on('change:digitstring', function () {
+            const ds = this.get('digitstring');
             this.url = '/inventory/api/idents/' + ds;
         });
     }
@@ -90,64 +89,60 @@ app.locationView = Backbone.View.extend({
     model: new app.location(),
     initialize: function () {
         this.listenTo(this.model, 'sync', this.render);
-        return;
     },
-    render: function() {
-        if (this.showTemplate == null)  {
-            var ctxt = $('#showLocation').html();
-            var tmplt = _.unescape( ctxt );
-            this.showTemplate = _.template( tmplt );
+    render: function () {
+        if (this.showTemplate == null) {
+            const ctxt = $('#showLocation').html();
+            const tmplt = _.unescape(ctxt);
+            this.showTemplate = _.template(tmplt);
         }
-        var locView = this.showTemplate( this.model.attributes );
-        this.$el.html( locView );
-      return;
+        const locView = this.showTemplate(this.model.attributes);
+        this.$el.html(locView);
     }
 });
 
 app.itemTemplateView = Backbone.View.extend({
     className: 'itemTemplate',
     showTemplate: null,
-    render: function() {
-        if (this.showTemplate == null)  {
-            var ctxt = $('#showItemTemplate').html();
-            var tmplt = _.unescape( ctxt );
-            this.showTemplate = _.template( tmplt );
+    render: function () {
+        if (this.showTemplate == null) {
+            const ctxt = $('#showItemTemplate').html();
+            const tmplt = _.unescape(ctxt);
+            this.showTemplate = _.template(tmplt);
         }
-        var itmView = this.showTemplate( this.model.attributes );
-        this.$el.html( itmView );
+        const itmView = this.showTemplate(this.model.attributes);
+        this.$el.html(itmView);
       return this;
     }
 });
 
 app.itmTmpltListView = Backbone.View.extend({
     el: '#itemListBox',
-    initialize: function()   {
+    initialize: function () {
         this.collection = new app.itmTmpltList();
         this.listenTo(this.collection, 'add', this.showItem);
         this.counter = document.getElementById('itemBox');
     },
-    clearCollection: function() {
+    clearCollection: function () {
         this.el.innerHTML = '';
         this.collection.reset(null);
         this.showCount();
-        return;
     },
-    showCount:  function()  {
+    showCount: function () {
         let plural = 's';
-        if ( this.collection.length == 1 )  {
+        if (this.collection.length === 1) {
             plural = '';
         }
-        let ct = '<span>'+ this.collection.length + ' item' + plural +'</span>';
+        const ct = '<span>' + this.collection.length + ' item' + plural + '</span>';
         this.counter.innerHTML = ct;
     },
-    showItem: function(mdl, coll)    {
-        let view = new app.itemTemplateView({
+    showItem: function (mdl, coll) {
+        const view = new app.itemTemplateView({
             model: mdl
         });
-        let lv = view.render();
+        const lv = view.render();
         this.el.insertBefore(lv.el, this.el.childNodes[0]);
         this.showCount();
-        return;
     }
 });
 
@@ -159,22 +154,22 @@ app.dataEntryView = Backbone.View.extend({
     events: {
         'change input[name="digitString"]': 'parseEntry'
     },
-    initialize: function()  {
+    initialize: function () {
         this.inp = this.el.querySelector('input[name="digitString"]');
         this.divErr = this.el.querySelector('div.error');
         app.locView = new app.locationView();
         app.stockRcd = new app.stockRecord();
         app.itemListView = new app.itmTmpltListView();
         this.listenTo(this.model, 'sync', this.checkReturned);
-        return;
     },
-    checkReturned: function(model, response, options)   {
-            var ident = model.get('identifier');
-            var typ = model.get('type');
+    checkReturned: function (model, response, options) {
+            const ident = model.get('identifier');
+            const typ = model.get('type');
+            let msg;
             switch (typ) {
                 case 'ITM':
-                    if (!this.currLoc)   {
-                        var msg = "Please enter a location ID";
+                    if (!this.currLoc) {
+                        msg = 'Please enter a location ID';
                         this.showError(msg);
                         break;
                     }
@@ -189,25 +184,22 @@ app.dataEntryView = Backbone.View.extend({
                     app.itemListView.clearCollection();
                     break;
                 default:
-                    var msg = "Identifier '" + model.get('digitstring')
-                        + "' was not found"
+                    msg = "Identifier '" + model.get('digitstring') +
+                        "' was not found"
                     this.showError(msg);
             }
-        return;
     },
-    parseEntry: function()  {
-        this.divErr.innerHTML = "";
-        var ds = this.inp.value || "";
-        if ( ! /^\d+$/.test(ds) )   {
-            this.showError("Please enter only digits");
+    parseEntry: function () {
+        this.divErr.innerHTML = '';
+        const ds = this.inp.value || '';
+        if (!/^\d+$/.test(ds)) {
+            this.showError('Please enter only digits');
             return;
         }
-        this.model.set("digitstring", ds);
+        this.model.set('digitstring', ds);
         this.model.fetch();
-        return;
     },
-    showError: function(msg)    {
+    showError: function (msg) {
         this.divErr.innerHTML = msg;
-        return;
     }
 });

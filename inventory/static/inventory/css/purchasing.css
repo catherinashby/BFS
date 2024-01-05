@@ -1,0 +1,113 @@
+    main    {
+        background-color: #f8f8ff; /* Ghost White */
+        padding: 1vh 1vw;
+        }
+    #wrapper    {
+        margin: 0 auto;
+        max-width: 1000px;
+        }
+    #wrapper span  {
+        padding: 1ex 5px;
+        margin: 1ex 10px;
+        }
+   span.btn   {
+        display: inline-block;
+        background-color: #efefef;
+        border: thin solid black;
+        border-radius: 6px;
+        padding: 0.5ex 0.5em;
+        cursor: pointer;
+        }
+    span.btn:focus   {
+        border-width: medium;
+        }
+    #supplierBox    {
+        padding: 1em 10%;
+    }
+    #invoice    {
+        padding-left: 10%;
+        }
+    #entryBox   {
+        padding: 1vh 0; margin: 0 5vw;
+        }
+    #entryBox label {
+        padding-right: 1ex;
+        }
+    #itemListBox    {
+        padding: 1vh 0; margin: 0 5vw;
+        }
+    #wrapper div.itemTemplate   {
+        border: thin solid black;
+        padding: 1vh 2vw;
+        }
+    div.databox   {
+        display: flow-root;
+        max-width: 40em;
+        margin: 0 auto;
+        }
+   div.databox div.buttons    {
+        display: inline-block;
+        float: left;
+        width: 5em;
+        padding: 1vh 0;
+        }
+   div.databox div.fields    {
+        width: calc(100% - 5.25em); /* width of 'buttons' column, and a bit */
+        float: right;
+        }
+    #itemBox input[name="linked_code"] {
+        max-width: 14em;
+    }
+    #itemBox input.short {
+        max-width: 6em;
+    }
+    div.desc   {
+        padding: 1vh 1vw; margin: 1vh 1vw;
+        }
+    div.fields label   {
+        display: inline-block;
+        min-width: 80px;
+        text-align: right;
+        }
+    #itemBox div.fields div.lines {
+        padding-top: 1vh;
+        padding-bottom: 1vh;
+        }
+    #itemBox div.fields div.pad {
+        padding-left: 60px;
+        }
+    div.fields div.lines input  {
+        width: calc(100% - 100px); /* width of label, and a bit */
+        }
+    div.fields input, textarea   {
+        margin: 1vh auto;
+        }
+    div.fields textarea   {
+        width: 90%; margin-left: 5%;
+        }
+    #itemBox  div.fields input.invalid   {
+        border-color: crimson;
+        }
+    div.fields div.error   {
+        background-color: lightpink;
+        text-align: center;
+        }
+    #itemListBox div.databox    {
+        border-top: thin solid black;
+        padding-top: 1vh;
+        }
+    div.imgBox label {
+        display: inline-block;
+        background-color: #efefef;
+        border: thin solid black;
+        border-radius: 6px;
+        padding: 0.5ex 0.5em;
+        margin: 0 1vw;
+        cursor: pointer;
+        }
+    div.imgBox img  {
+        margin: 1vh 1vw;
+    }
+    div.imgBox div.gallery  {
+        margin-left: 5.5em;
+        }

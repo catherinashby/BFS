@@ -30,6 +30,7 @@ Backbone.Validation = (function () {
             };
         return {
             required: function(value, bool) {
+                if ( bool === false )  return true;
                 return hasValue(value);
                 },
             min: function(value, minValue) {
@@ -134,9 +135,26 @@ Backbone.Validation = (function () {
 				if ( elem.name in model.attributes )  {
 					let attr = model.get( elem.name );
 					//  do the values match?
-					if ( elem.value != attr )  {
-						changes[ elem.name ] = elem.value;
-					}
+                    if ( attr === true || attr === false ) {
+                        // special test for booleans
+                        let val = elem.value.toLowerCase();
+                        switch(val) {
+                            case 'true':
+                            case 'yes':
+                            case '1': val = true; break;
+                            case 'false':
+                            case 'no':
+                            case '0': val = false; break;
+                            }
+                        if ( val !== attr ) {
+                            changes[ elem.name ] = elem.value;
+                            }
+                    } else
+                    if ( elem.value || attr ) { // nulls equate to blanks
+    					if ( elem.value !== attr )  {
+    						changes[ elem.name ] = elem.value;
+    					}
+                    }
 				}
             }
         });

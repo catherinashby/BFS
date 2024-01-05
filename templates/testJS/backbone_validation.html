@@ -33,6 +33,10 @@
     QUnit.test('required', function(assert) {
       assert.true(bb_val.required('OK'), 'non-empty string');
       assert.false(bb_val.required(''), 'empty string');
+      assert.true(bb_val.required('OK',true), 'non-empty string :: required');
+      assert.false(bb_val.required('',true), 'empty string :: required');
+      assert.true(bb_val.required('OK',false), 'non-empty string :: not reqired');
+      assert.true(bb_val.required('',false), 'empty string :: not required');
     });
     QUnit.test('min', function(assert) {
       assert.true(bb_val.min(47, 5), '47 is greater than 5');

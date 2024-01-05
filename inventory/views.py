@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.conf import settings
@@ -75,17 +77,23 @@ def images(request):
 def images_upload(request):
     fields = {'error': 'No file uploaded'}
     image_file = None
+    item = None
     for fil in request.FILES:
         image_file = request.FILES[fil]
+    for key in request.POST:
+        if key == 'item_id':
+            item = request.POST[key]
 
     if image_file:
 
         one = Picture()
         setattr(one, 'photo', image_file)
+        setattr(one, 'item_id', item)
         one.save()
 
         fields = {}
         fields['id'] = one.id
+        fields['item_id'] = one.item_id
         fields['photo'] = one.photo.name
         fields['uploaded'] = one.uploaded
 

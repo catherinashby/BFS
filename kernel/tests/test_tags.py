@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.test import RequestFactory, TestCase
 from django.template import Context, RequestContext
 
-from ..templatetags.base_tags import template_filename, user_class, user_initials
+from ..templatetags.base_tags import ( template_filename, user_class,
+                                       user_initials, settings_value)
 from accounts.models import User
 
 
@@ -68,3 +70,18 @@ class BaseTagTests(TestCase):
         cntxt = RequestContext(req)
         chars = user_initials(cntxt)
         self.assertEqual(chars, ' R', "should return 'blank-R'")
+
+    def test_settings_value(self):
+        setting = 'MEDIA_URL'
+        url = settings_value(setting)
+        self.assertEqual(url, settings.MEDIA_URL, "should return directory name")
+
+        setting = 'STATIC_URL'
+        url = settings_value(setting)
+        self.assertEqual(url, settings.STATIC_URL, "should return nothing")
+
+        setting = 'SECRET_KEY'
+        url = settings_value(setting)
+        self.assertEqual(url, 'SECRET_KEY', "should return name")
+
+        return;

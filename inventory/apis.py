@@ -9,7 +9,7 @@ from restless.preparers import FieldsPreparer
 
 from .dj4 import DjangoResource
 from .models import Identifier, Location, Supplier, ItemTemplate, Picture
-from .models import StockBook, Price, Invoice, Purchase
+from .models import StockBook, Price, Invoice, Purchase, Receipt, ItemSale
 
 
 class BaseResource(DjangoResource):
@@ -549,7 +549,7 @@ class ItemDataResource(BaseResource):
 
         # update Purchase record
         if 'cost' in self.data:
-            money = Decimal( self.data['cost'] )
+            money = Decimal(self.data['cost'])
             inv_id = self.data['invoice'] if 'invoice' in self.data else None
             if not inv_id:
                 errs = {'invoice': 'No invoice ID'}
@@ -563,13 +563,13 @@ class ItemDataResource(BaseResource):
             purchase, created = Purchase.objects.get_or_create(invoice=invoice, item=item)
             if not created:
                 money += purchase.cost
-            setattr( purchase, 'cost', money )
+            setattr(purchase, 'cost', money)
             purchase.save()
             updates['purchase'] = purchase.id
 
         # update Price record
         if 'price' in self.data:
-            money = Decimal( self.data['price'] )
+            money = Decimal(self.data['price'])
             try:
                 priceRcd = Price.objects.filter(itm=item).latest('updated')
             except Price.DoesNotExist:
@@ -1057,3 +1057,184 @@ class PurchaseResource(BaseResource):
 
         pchs.save()
         return pchs
+
+
+class ReceiptResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'id': 'id',
+        'status': 'status',
+        'count': 'count',
+        'amount': 'amount',
+        'adjusted': 'adjusted',
+        'created': 'created',
+        'updated': 'updated'
+    })
+
+    def is_authenticated(self):
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_receipt')
+        return ok
+
+    # GET /api/receipt/<pk>/
+    def detail(self, pk):
+
+        try:
+            rcpt = Receipt.objects.get(id=pk)
+        except Receipt.DoesNotExist:
+            errs = {'id': 'Receipt #{} not found'.format(pk)}
+            return Data({'errors': errs}, should_prepare=False)
+
+        return rcpt
+
+    # GET /api/receipt/
+    def list(self):
+        qs = Receipt.objects.all()
+        # check for search parameters
+        params = self.check_search_criteria(Receipt._meta.fields)
+        if params:
+            rcds = []
+            for rcd in qs.iterator():
+                keep = self.filter_record(params, rcd)
+                if keep:
+                    rcds.append(rcd)
+            return rcds
+        # no filters; just return everything
+        return qs
+
+    # POST /api/receipt/
+    def create(self):
+
+        rcpt = Receipt()
+        # id, status, created, and updated have default values
+        for fld in ['count', 'amount', 'adjusted']:
+            val = self.data[fld] if fld in self.data else None
+            setattr(rcpt, fld, val)
+
+        rcpt.save()
+        return rcpt
+
+    # PUT /api/receipt/<pk>
+    def update(self, pk):
+        rcpt = Receipt.objects.get(id=pk)
+
+        fld = 'status'
+        val = self.data[fld] if fld in self.data else None
+        if val is not None:
+            if val in rcpt.Status:
+                setattr(rcpt, fld, val)
+            else:
+                errs = {'status': "'{}' is not a valid status".format(val)}
+                return Data({'errors': errs}, should_prepare=False)
+
+        for fld in ['count', 'amount', 'adjusted']:
+            val = self.data[fld] if fld in self.data else None
+            if val is not None:
+                setattr(rcpt, fld, val)
+
+        rcpt.save()
+        return rcpt
+
+
+class ItemSaleResource(BaseResource):
+    preparer = FieldsPreparer(fields={
+        'id': 'id',
+        'receipt': 'receipt_id',
+        'item': 'item_id',
+        'count': 'count',
+        'amount': 'amount',
+        'adjusted': 'adjusted',
+        'created': 'created'
+    })
+
+    def is_authenticated(self):
+        if self.request.method == 'GET':
+            return True
+        user = self.request.user
+        ok = user.has_perm('inventory.add_itemsale')
+        return ok
+
+    # GET  /api/itemsale/<pk>/
+    def detail(self, pk):
+
+        try:
+            tran = ItemSale.objects.get(id=pk)
+        except ItemSale.DoesNotExist:
+            errs = {'id': 'ItemSale #{} not found'.format(pk)}
+            return Data({'errors': errs}, should_prepare=False)
+
+        return tran
+
+    # GET  /api/itemsale/
+    def list(self):
+        qs = ItemSale.objects.all()
+        # check for search parameters
+        params = self.check_search_criteria(ItemSale._meta.fields)
+        if params:
+            rcds = []
+            for rcd in qs.iterator():
+                keep = self.filter_record(params, rcd)
+                if keep:
+                    rcds.append(rcd)
+            return rcds
+        # no filters; just return everything
+        return qs
+
+    # POST /api/itemsale/
+    def create(self):
+
+        errs = {}
+
+        rcpt_id = self.data['receipt_id'] if 'receipt_id' in self.data else None
+        if rcpt_id:
+            try:
+                rcpt = Receipt.objects.get(id=rcpt_id)
+            except Receipt.DoesNotExist:
+                errs['receipt_id'] = 'Receipt #{} not found'.format(rcpt_id)
+        else:
+            errs['receipt_id'] = 'A receipt is required'
+
+        itm_id = self.data['item_id'] if 'item_id' in self.data else None
+        if itm_id:
+            try:
+                itm = ItemTemplate.objects.get(identifier_id=itm_id)
+            except ItemTemplate.DoesNotExist:
+                errs['item_id'] = 'Item {} not found'.format(itm_id)
+        else:
+            errs['item_id'] = 'An item is required'
+
+        if errs:
+            return Data({'errors': errs}, should_prepare=False)
+
+        tran = ItemSale(receipt=rcpt, item=itm)
+
+        for fld in ['count', 'amount', 'adjusted']:
+            val = self.data[fld] if fld in self.data else None
+            setattr(tran, fld, val)
+
+        tran.save()
+        return tran
+
+    # PUT  /api/itemsale/<pk>
+    def update(self, pk):
+        try:
+            tran = ItemSale.objects.get(id=pk)
+        except ItemSale.DoesNotExist:
+            errs = {'id': 'ItemSale #{} not found'.format(pk)}
+            return Data({'errors': errs}, should_prepare=False)
+
+        rcpt_id = self.data['receipt_id'] if 'receipt_id' in self.data else None
+        if rcpt_id:
+            setattr(tran, 'receipt_id', rcpt_id)
+        itm_id = self.data['item_id'] if 'item_id' in self.data else None
+        if itm_id:
+            setattr(tran, 'item_id', itm_id)
+
+        for fld in ['count', 'amount', 'adjusted']:
+            val = self.data[fld] if fld in self.data else None
+            if val is not None:
+                setattr(tran, fld, val)
+
+        tran.save()
+        return tran

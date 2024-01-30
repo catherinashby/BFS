@@ -14,7 +14,7 @@ from django.urls import reverse
 from accounts.models import User
 from ..apis import BaseResource
 from ..models import Identifier, Location, Supplier, ItemTemplate, Picture
-from ..models import StockBook, Price, Invoice, Purchase
+from ..models import StockBook, Price, Invoice, Purchase, Receipt, ItemSale
 
 
 @contextmanager
@@ -50,8 +50,10 @@ class BaseResourceTest(TestCase):
         mdl = Identifier()
         flds = copy.deepcopy(mdl._meta.fields)
         for fld in flds:
-            if fld.column == 'barcode':  continue
-            if fld.column == 'linked_code':  continue
+            if fld.column == 'barcode':
+                continue
+            if fld.column == 'linked_code':
+                continue
             fld.concrete = False
             break
         req = self.rf.get("/resource?barcode=1234&linked_code=5678&not_a=90")
@@ -629,7 +631,7 @@ class ItemDataResourceTest(TestCase):
         self.assertIn('item', d['errors'], "item error missing")
         self.assertEqual(d['errors']['item'], "Item not found")
 
-        response = self.client.post(url, {'item': self.barcode,},
+        response = self.client.post(url, {'item': self.barcode},
                                     content_type="application/json")
         self.assertEqual(response.status_code, 201, "should return 'Created'")
 
@@ -770,12 +772,12 @@ class PictureResourceTest(TestCase):
         with TemporaryDirectory() as tmpdirname:
             with self.settings(MEDIA_ROOT=tmpdirname):
                 with open(self.image_file, 'rb') as fp:
-                    response = self.client.post(url, {'photo': fp});
+                    response = self.client.post(url, {'photo': fp})
                     d = json.loads(response.content)
 
         self.assertEqual(response.status_code, 201, "should return 'Created'")
         d = json.loads(response.content)
-        self.assertIn('photo', d, "should return filename" )
+        self.assertIn('photo', d, "should return filename")
 
     def test_update(self):
         pk = 1
@@ -1336,7 +1338,7 @@ class PurchaseResourceTest(TestCase):
         self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
 
         self.client.login(username='dorothy', password='rubySlippers')
-        change = json.dumps({'cost': '19.95'});
+        change = json.dumps({'cost': '19.95'})
         response = self.client.put(url, change)
         d = json.loads(response.content)
         self.assertIn('errors', d, "errors container missing")
@@ -1360,3 +1362,206 @@ class PurchaseResourceTest(TestCase):
         self.assertEqual(d['cost'], '19.95', "cost should not be changed")
 
         return
+
+
+class ReceiptResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           is_superuser=True,
+                                           password='rubySlippers')
+        cls.r1 = Receipt.objects.create(id=1001, count=1, amount=7.99)
+        cls.r2 = Receipt.objects.create(id=1002, count=1, amount=14.79)
+
+    def test_detail(self):
+        url = reverse('receipt-detail', kwargs={'pk': 5})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return an error")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('id', d['errors'], "id error missing")
+        self.assertEqual(d['errors']['id'], "Receipt #5 not found")
+
+        url = reverse('receipt-detail', kwargs={'pk': self.r2.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return a receipt")
+        d = json.loads(response.content)
+        self.assertIn('id', d, "id field missing")
+        self.assertEqual(d['id'], self.r2.id)
+        self.assertIn('amount', d, "amount field missing")
+        self.assertEqual(d['amount'], str(self.r2.amount))
+
+    def test_list(self):
+        url = reverse('receipt-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        for each in d['objects']:
+            self.assertIn('created', each, "should have 'created' field")
+
+        wqs = '{0}?amount=eq:{1}'.format(url, self.r1.amount)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 1, "should return one record")
+        self.assertEqual(d['objects'][0]['amount'], str(self.r1.amount), "should return amount")
+
+    def test_create(self):
+        url = reverse('receipt-list')
+        response = self.client.post(url, {}, content_type="application/json")
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {}, content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('id', d, "should have created a record")
+        self.assertIn('status', d, "should have a default status")
+        self.assertEqual(d['status'], "OPEN", " hould have status of 'Open'")
+
+    def test_update(self):
+        url = reverse('receipt-detail', kwargs={'pk': 1001})
+        change = json.dumps({'status': 'AWK!'})
+        response = self.client.put(url, change)
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('status', d['errors'], "status error message missing")
+        self.assertEqual(d['errors']['status'], "'AWK!' is not a valid status")
+
+        change = json.dumps({'count': 5, 'amount': 24.79})
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "update should succeed")
+        self.assertEqual(d['count'], 5, "count should be updated")
+        self.assertEqual(d['amount'], 24.79, "amount should be updated")
+
+        change = json.dumps({'status': 'CMPL'})
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "update should succeed")
+        self.assertEqual(d['status'], 'CMPL', "status should be updated")
+
+
+class ItemSaleResourceTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.usr = User.objects.create_user(username='dorothy',
+                                           email='dot@kansas.gov',
+                                           is_active=True,
+                                           is_superuser=True,
+                                           password='rubySlippers')
+        cls.r1001 = Receipt.objects.create(id=1001, count=1, amount=7.99)
+        id002 = Identifier.idents.create(barcode=1000002)
+        id015 = Identifier.idents.create(barcode=1000015)
+        cls.itm02 = ItemTemplate.objects.create(identifier_id=1000002,
+                                                description="random yardage")
+        cls.itm15 = ItemTemplate.objects.create(identifier_id=1000015,
+                                                description="more yardage")
+        cls.tran01 = ItemSale.objects.create(receipt=cls.r1001, item=cls.itm02,
+                                             count=2, amount=7.98)
+        cls.tran02 = ItemSale.objects.create(receipt=cls.r1001, item=cls.itm15,
+                                             count=1, amount=3.99)
+        return
+
+    def test_detail(self):
+        url = reverse('itemsale-detail', kwargs={'pk': 5})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return an error")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container missing")
+        self.assertIn('id', d['errors'], "id error missing")
+        self.assertEqual(d['errors']['id'], "ItemSale #5 not found")
+
+        url = reverse('itemsale-detail', kwargs={'pk': 1})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return an order")
+        d = json.loads(response.content)
+        self.assertIn('receipt', d, "receipt id missing")
+        self.assertEqual(d['receipt'], self.tran01.receipt_id)
+        self.assertIn('item', d, "item id missing")
+        self.assertEqual(d['item'], str(self.tran01.item_id))
+
+    def test_list(self):
+        url = reverse('itemsale-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200, "should return a list")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        for each in d['objects']:
+            self.assertIn('count', each, "should have 'count' field")
+
+        wqs = '{0}?count=eq:{1}'.format(url, self.tran01.count)
+        response = self.client.get(wqs)
+        self.assertEqual(response.status_code, 200, "should return a list of one item")
+        d = json.loads(response.content)
+        self.assertIn('objects', d, "objects container missing")
+        self.assertEqual(d['count'], 1, "should return one record")
+        self.assertEqual(d['objects'][0]['id'], self.tran01.id, "should return record 1")
+        self.assertEqual(d['objects'][0]['count'], self.tran01.count, "should return count")
+
+    def test_create(self):
+        url = reverse('itemsale-list')
+        response = self.client.post(url, {}, content_type="application/json")
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.post(url, {'receipt_id': 111},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container is missing")
+        self.assertIn('receipt_id', d['errors'], "receipt message is missing")
+        self.assertEqual(d['errors']['receipt_id'],
+                         "Receipt #111 not found", "wrong receipt message")
+        self.assertIn('item_id', d['errors'], "item message is missing")
+        self.assertEqual(d['errors']['item_id'], "An item is required", "wrong item message")
+
+        response = self.client.post(url, {'item_id': 111},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container is missing")
+        self.assertIn('receipt_id', d['errors'], "receipt message is missing")
+        self.assertEqual(d['errors']['receipt_id'],
+                         "A receipt is required", "wrong receipt message")
+        self.assertIn('item_id', d['errors'], "item message is missing")
+        self.assertEqual(d['errors']['item_id'], "Item 111 not found", "wrong item message")
+
+        data = {'receipt_id': 1001, 'item_id': 1000002, 'count': 1, 'amount': 3.99}
+        response = self.client.post(url, data, content_type="application/json")
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "create should succeed")
+        self.assertIn('id', d, "create should assign an id")
+
+    def test_update(self):
+        url = reverse('itemsale-detail', kwargs={'pk': 11})
+        change = json.dumps({'adjusted': ''})
+        response = self.client.put(url, change)
+        self.assertEqual(response.status_code, 401, "should return 'Unauthorized'")
+
+        self.client.login(username='dorothy', password='rubySlippers')
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertIn('errors', d, "errors container is missing")
+        self.assertIn('id', d['errors'], "error message is missing")
+        self.assertEqual(d['errors']['id'], "ItemSale #11 not found", "wrong error message")
+
+        url = reverse('itemsale-detail', kwargs={'pk': 1})
+        change = json.dumps({'receipt_id': 1001, 'item_id': '1000015'})
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "update should succeed")
+        self.assertEqual(d['item'], '1000015', "item should be updated")
+
+        change = json.dumps({'adjusted': 7.99})
+        response = self.client.put(url, change)
+        d = json.loads(response.content)
+        self.assertNotIn('errors', d, "update should succeed")
+        self.assertEqual(d['adjusted'], 7.99, "adjustment should be updated")

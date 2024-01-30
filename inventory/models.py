@@ -174,3 +174,41 @@ class Purchase(models.Model):
 
     class Meta:
         unique_together = ['invoice', 'item']
+
+
+class Receipt(models.Model):
+
+    class Status(models.TextChoices):
+        OPEN = 'OPEN'
+        COMPLETE = 'CMPL'
+        VOIDED = 'VOID'
+        ADJUSTED = 'ADJ'
+
+    # id > 1000
+    status = models.CharField(max_length=4, choices=Status.choices,
+                              default=Status.OPEN)
+    count = models.PositiveSmallIntegerField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=8, decimal_places=2,
+                                 null=True, blank=True)
+    adjusted = models.DecimalField(max_digits=8, decimal_places=2,
+                                   null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        lbl = self.Status[self.status].label
+        return 'Receipt #{} :: {} -- {}'.format(self.id, self.created, lbl)
+
+
+class ItemSale(models.Model):
+    # id
+    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE)
+    item = models.ForeignKey(ItemTemplate, on_delete=models.CASCADE)
+    count = models.PositiveSmallIntegerField(default=1)
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    adjusted = models.DecimalField(max_digits=8, decimal_places=2,
+                                   null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return 'ItemSale #{} :: {}'.format(self.id, self.receipt.id)

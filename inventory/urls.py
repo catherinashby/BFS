@@ -14,7 +14,8 @@ urlpatterns = [
     path('images/upload', views.images_upload, name='images-upload'),
 
     path('stock', views.stockbook, name='stockBook'),
-    path('purchase', login_required(TemplateView.as_view(template_name="inventory/purchasing.html")), name='purchasing'),
+    path('purchase', login_required(TemplateView.as_view(
+                                    template_name="inventory/purchasing.html")), name='purchasing'),
 
     path('dev', TemplateView.as_view(template_name="inventory/dev.html"), name="dev-api"),
     path('api/locid', apis.LocIdResource.as_list(), name='locid-list'),
@@ -26,7 +27,8 @@ urlpatterns = [
     path('api/supplier/<int:pk>', apis.SupplierResource.as_detail(), name='supplier-detail'),
     path('api/item', apis.ItemTemplateResource.as_list(), name='item-list'),
     path('api/item/<int:pk>', apis.ItemTemplateResource.as_detail(), name='item-detail'),
-    path('api/itemdata/<str:digitstring>', apis.ItemDataResource.as_detail(), name='itemdata-detail'),
+    path('api/itemdata/<str:digitstring>', apis.ItemDataResource.as_detail(),
+         name='itemdata-detail'),
     path('api/itemdata', apis.ItemDataResource.as_list(), name='itemdata-list'),
     path('api/picture', apis.PictureResource.as_list(), name='picture-list'),
     path('api/picture/<int:pk>', apis.PictureResource.as_detail(), name='picture-detail'),
@@ -38,4 +40,8 @@ urlpatterns = [
     path('api/invoice/<int:pk>', apis.InvoiceResource.as_detail(), name='invoice-detail'),
     path('api/purchase', apis.PurchaseResource.as_list(), name='purchase-list'),
     path('api/purchase/<int:pk>', apis.PurchaseResource.as_detail(), name='purchase-detail'),
+    path('api/receipt', apis.ReceiptResource.as_list(), name='receipt-list'),
+    path('api/receipt/<int:pk>', apis.ReceiptResource.as_detail(), name='receipt-detail'),
+    path('api/itemsale', apis.ItemSaleResource.as_list(), name='itemsale-list'),
+    path('api/itemsale/<int:pk>', apis.ItemSaleResource.as_detail(), name='itemsale-detail'),
 ]

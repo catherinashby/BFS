@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from ..models import Identifier, Location, Supplier, ItemTemplate, Picture
-from ..models import StockBook, Price, Invoice, Purchase
+from ..models import StockBook, Price, Invoice, Purchase, Receipt, ItemSale
 
 
 class IdentifierTest(TestCase):
@@ -96,3 +96,22 @@ class PurchaseTest(TestCase):
         pchs = Purchase(invoice_id=101, item_id=1000002)
         lbl = '{}'.format(pchs)
         self.assertEqual(lbl, "Inv:101 Item:1000002")
+
+
+class ReceiptTest(TestCase):
+
+    def test_name(self):
+        rcpt = Receipt(id=1001)
+        lbl = '{}'.format(rcpt)
+        self.assertTrue(lbl.startswith("Receipt #1001"))
+        self.assertTrue(lbl.endswith("-- Open"))
+
+
+class ItemSaleTest(TestCase):
+
+    def test_name(self):
+        ident = Identifier(barcode=1000002)
+        item = ItemSale(id=1, receipt=Receipt(id=1001),
+                        item=ItemTemplate(identifier=ident))
+        lbl = '{}'.format(item)
+        self.assertEqual(lbl, 'ItemSale #1 :: 1001')

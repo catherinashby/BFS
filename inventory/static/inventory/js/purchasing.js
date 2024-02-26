@@ -9,6 +9,8 @@ Backbone.View.prototype.close = function () {
 
 var app = app || {};
 
+app.templates = {};
+
 app.imageModel = Backbone.Model.extend({
     defaults: {
         id: null,
@@ -192,7 +194,7 @@ app.lineItemsView = Backbone.View.extend({
     initialize: function () {
         this.listenTo(app.invoice, 'change', this.clearLineItems);
         //
-        const ctxt = $('#showItemTemplate').html();
+        const ctxt = app.templates['showItemTemplate'].innerHTML;
         const tmplt = _.unescape(ctxt);
         this.template = _.template(tmplt);
     },
@@ -219,6 +221,8 @@ app.lineItemsView = Backbone.View.extend({
 app.purchasingView = Backbone.View.extend({
     el: '#wrapper',
     initialize: function () {
+        const templates = document.querySelectorAll('template');
+        templates.forEach((tmplt) => app.templates[tmplt.id] = tmplt );
         this.supView = new app.supplierListView({ el: '#supplierBox' });
 
         app.invoice = new app.invoiceModel();

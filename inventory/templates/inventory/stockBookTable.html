@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block fontspace %}
+  <meta name="Cache-Control" content="no-cache, no-store, must-revalidate">
+{% endblock fontspace %}
+
+{% block linkspace %}
+  <link rel="stylesheet" type="text/css"
+       href="{% static 'inventory/css/stockTable.css' %}" />
+{% endblock linkspace %}
+
+{% block scripts %}
+  <script src="{% static 'common/js/underscore.js' %}"></script>
+  <script src="{% static 'common/js/backbone.js' %}"></script>
+  <script src="{% static 'common/js/backbone.native.js' %}"></script>
+  <script src="{% static 'common/js/backbone.validation.js' %}"></script>
+  <script src="{% static 'inventory/js/stockTable.js' %}"></script>
+{% endblock scripts %}
+
+{% block contents %}
+    <div id="wrapper"></div>
+    <template id="stockTemplate">
+      <div class="buttons">
+        <div class="oneButton">
+          <span class="btn" title="Edit">Edit</span>
+        </div>
+        <div class="twoButtons hidden">
+          <span class="btn" title="Save">Save</span>
+          <span class="btn" title="Cancel">Cancel</span>
+        </div>
+      </div>
+      <div class="dataBox">
+        <div class="idents flex">
+          <p>ItmID: <span><%= itm %></span></p>
+          <p>Loc: <span><%= loc %></span></p>
+        </div>
+        <div class="numbers flex">
+          <p>Count:
+            <span class="showUnits"><%= units %></span>
+            <span class="editUnits hidden">
+              <input type="text" name="units"
+                     autocomplete="off" value="<%= units %>" />
+            </span>
+          </p>
+          <p><span><%= type_label %></span></p>
+        </div>
+        <div class="error"> </div>
+        <div class="stamp1 flex">
+          <p>Created: <span><%= created %></span></p>
+        </div>
+        <div class="stamp2 flex">
+          <p>Updated: <span><%= updated %></span></p>
+        </div>
+      </div>
+    </template>
+{% endblock contents %}
+
+{% block footer %}
+    <div>
+      <script>
+      app.reg = new app.stockListView({el: '#wrapper'});
+      </script>
+    </div>
+{% endblock footer %}
+

@@ -95,13 +95,13 @@ class BaseResourceTest(TestCase):
         rv = self.br.filter_record(p, r)
         self.assertTrue(rv, "should be True")
 
-        p = {'units': ('IntegerField', 'lt:5')}
-        r = StockBook(units=3)
+        p = {'count': ('IntegerField', 'lt:5')}
+        r = Receipt(count=3)
         rv = self.br.filter_record(p, r)
         self.assertTrue(rv, "should be True")
 
-        p = {'units': ('IntegerField', 'bt:1,9')}
-        r = StockBook(units=5)
+        p = {'count': ('IntegerField', 'bt:1,9')}
+        r = Receipt(count=5)
         rv = self.br.filter_record(p, r)
         self.assertTrue(rv, "should be True")
 
@@ -636,15 +636,19 @@ class ItemDataResourceTest(TestCase):
         self.assertEqual(response.status_code, 201, "should return 'Created'")
 
         response = self.client.post(url, {'item': self.barcode,
-                                          'price': '7.99',
-                                          'units': 5, 'eighths': 2},
+                                          'units': 2, 'price': '7.99'},
                                     content_type="application/json")
         d = json.loads(response.content)
         self.assertIn('StockBook', d, "StockBook tag missing")
 
         response = self.client.post(url, {'item': self.barcode,
-                                          'cost': '2.99',
-                                          'units': 5, 'eighths': 2},
+                                          'units': 2, 'cost': '7.99'},
+                                    content_type="application/json")
+        d = json.loads(response.content)
+        self.assertNotIn('StockBook', d, "StockBook tag found")
+
+        response = self.client.post(url, {'item': self.barcode,
+                                          'cost': '2.99'},
                                     content_type="application/json")
         d = json.loads(response.content)
         self.assertIn('errors', d, "errors container missing")
@@ -851,7 +855,7 @@ class StockBookResourceTest(TestCase):
                     description='And one more',
                     yardage=False,
                     identifier=Identifier.idents.create(barcode=cls.itm4))
-        StockBook.objects.create(itm=i1, loc=l1)
+        StockBook.objects.create(itm=i1, loc=l1, units=1.25)
         StockBook.objects.create(itm=i2, loc=l2)
 
     def test_detail(self):
@@ -932,7 +936,8 @@ class StockBookResourceTest(TestCase):
         self.assertIn('loc_id', d['errors'], "loc_id error missing")
         self.assertEqual(d['errors']['loc_id'], "Location not found")
 
-        response = self.client.post(url, {'itm_id': self.itm3, 'loc_id': self.locID},
+        response = self.client.post(url, {'itm_id': self.itm3,
+                                          'loc_id': self.locID},
                                     content_type="application/json")
         d = json.loads(response.content)
         self.assertNotIn('errors', d, "errors container found")
@@ -966,23 +971,17 @@ class StockBookResourceTest(TestCase):
         self.assertIn('loc_id', d['errors'], "loc error missing")
         self.assertEqual(d['errors']['loc_id'], "Location not found")
 
-        url = reverse('stock-detail', kwargs={'pk': self.itm2})
-        change = json.dumps({'loc_id': self.locID, 'eighths': 4})
-        response = self.client.put(url, change)
+        response = self.client.put(url, '{"units": 42}')
         self.assertEqual(response.status_code, 202, "should return 'Accepted'")
         d = json.loads(response.content)
         self.assertNotIn('errors', d, "errors container found")
-        self.assertIn('eighths', d, "eighths field missing")
-        self.assertIsNone(d['eighths'], "Eighths should be unset")
+        self.assertIn('created', d, "created timestamp missing")
 
-        url = reverse('stock-detail', kwargs={'pk': self.itmID})
-        change = json.dumps({'eighths': 4, 'units': 24})
-        response = self.client.put(url, change)
+        response = self.client.put(url, '{"units": 42, "loc_id": 1010}')
         self.assertEqual(response.status_code, 202, "should return 'Accepted'")
         d = json.loads(response.content)
         self.assertNotIn('errors', d, "errors container found")
-        self.assertIn('eighths', d, "eighths field missing")
-        self.assertEqual(d['eighths'], 4, "Eighths should be set")
+        self.assertIn('created', d, "created timestamp missing")
 
 
 class PriceResourceTest(TestCase):

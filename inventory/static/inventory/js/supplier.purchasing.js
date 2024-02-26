@@ -120,7 +120,7 @@ app.supplierListView = Backbone.View.extend({
     },
     renderEdit: function () {
         if (this.editTemplate === null) {
-            const ctxt = $('#editSupplier').html();
+            const ctxt = app.templates['editSupplier'].innerHTML;
             const tmplt = _.unescape(ctxt);
             this.editTemplate = _.template(tmplt);
         }

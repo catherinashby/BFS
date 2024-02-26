@@ -533,19 +533,15 @@ class ItemDataResource(BaseResource):
             return Data({'errors': errs}, should_prepare=False)
 
         # update StockBook record
-        if 'units' in self.data or 'eighths' in self.data:
+        if 'units' in self.data:
             units = self.data['units'] if 'units' in self.data else None
-            eighths = self.data['eighths'] if 'eighths' in self.data else None
             stockRcd, created = StockBook.objects.get_or_create(itm=item)
-            if units and stockRcd.units != int(units):
+            if units and stockRcd.units != float(units):
                 setattr(stockRcd, 'units', units)
-                created = True
-            if eighths and stockRcd.eighths != int(eighths):
-                setattr(stockRcd, 'eighths', eighths)
                 created = True
             if created:
                 stockRcd.save()
-            updates['StockBook'] = created
+                updates['StockBook'] = created
 
         # update Purchase record
         if 'cost' in self.data:
@@ -655,9 +651,9 @@ class PictureResource(BaseResource):
 class StockBookResource(BaseResource):
     preparer = FieldsPreparer(fields={
         'itm': 'itm_id',
+        'itm_type': 'itm.type_item',
         'loc': 'loc_id',
         'units': 'units',
-        'eighths': 'eighths',
         'created': 'created',
         'updated': 'updated',
     })
@@ -671,7 +667,7 @@ class StockBookResource(BaseResource):
 
     # GET /api/stockbook/
     def list(self):
-        qs = StockBook.objects.all()
+        qs = StockBook.objects.select_related("itm").all()
         # check for search parameters
         params = self.check_search_criteria(StockBook._meta.fields)
         if params:
@@ -733,18 +729,9 @@ class StockBookResource(BaseResource):
                 errs = {'loc_id': 'Location not found'}
                 return Data({'errors': errs}, should_prepare=False)
 
-        rcd = StockBook(itm=item, loc=loc)
-
-        fld = 'eighths'
-        val = self.data[fld] if fld in self.data else None
-        eighths = val if item.yardage else None
-
+        rcd = StockBook(itm=item)
         fld = 'units'
-        units = self.data[fld] if fld in self.data else None
-
-        if units:
-            rcd.units = units
-            rcd.eighths = eighths
+        rcd.units = self.data[fld] if fld in self.data else None
 
         rcd.save()
         return rcd
@@ -771,16 +758,10 @@ class StockBookResource(BaseResource):
         rcd = qs[0]
         rcd.loc = loc if loc else rcd.loc
 
-        fld = 'eighths'
-        val = self.data[fld] if fld in self.data else None
-        eighths = val if item.yardage else None
-
         fld = 'units'
         units = self.data[fld] if fld in self.data else None
-
-        if units:
+        if units != rcd.units:
             rcd.units = units
-            rcd.eighths = eighths
 
         rcd.save()
         return rcd

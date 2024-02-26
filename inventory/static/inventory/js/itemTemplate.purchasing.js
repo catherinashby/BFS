@@ -35,11 +35,7 @@ app.itemTemplateView = Backbone.View.extend({
         linked_code: { name: 'required', args: ['false'] }
     },
     detailValidations: {
-        units: [{ name: 'pattern', args: ['digits'], message: 'Whole numbers only' },
-                   { name: 'range', args: [1, 999], message: 'Range is 1 through 999' }],
-        eighths: [{ name: 'required' },
-                     { name: 'pattern', args: ['digits'], message: 'Whole numbers only' },
-                     { name: 'range', args: [0, 7], message: 'Range is 0 through 7' }],
+        units: { name: 'pattern', args: [], message: 'Enter a number' },
         cost: { name: 'range', args: [0, 999999.99], message: 'Cost Range is 0.00 to 999999.99' },
         price: { name: 'range', args: [0, 999999.99], message: 'Price Range is 0.00 to 999999.99' }
     },
@@ -71,6 +67,9 @@ app.itemTemplateView = Backbone.View.extend({
         data.forEach(function (elem) {
             elem.innerHTML = '';
         });
+        const ydg = this.model.get('yardage')==true;
+        const pattern = (ydg)? /^(?:\d{1,3})\.?(?:\d{0,3})?$/: /^(?:\d{1,3})$/;
+        this.detailValidations['units']['args'] = pattern;
         data = parent.querySelectorAll('input');
         let changes = Backbone.Validation.checkForm(this.detailValidations, data, this.model);
         //  show errors
@@ -101,8 +100,12 @@ app.itemTemplateView = Backbone.View.extend({
     detailsResponse: function (m, r, o) {
         if (o.source === 'stock') {
             m.fetchCount = m.fetchCount + 1;
-            this.model.set('units', ('errors' in r) ? null : r.units);
-            this.model.set('eighths', ('errors' in r) ? null : r.eighths);
+            const ydg = this.model.get('yardage')==true;
+            let nu = ('errors' in r) ? null : r.units;
+            if (nu && !ydg) {
+                nu = Math.floor(nu);
+            }
+            this.model.set('units', nu);
         }
         if (o.source === 'price') {
             m.fetchCount = m.fetchCount + 2;
@@ -130,7 +133,7 @@ app.itemTemplateView = Backbone.View.extend({
     fetchDetails: function () {
         app.detailsRecord.fetchCount = 0;
         const bc = this.model.get('barcode');
-        //  fetch units, eighths from StockBook
+        //  fetch units, item_type from StockBook
         const opts = {
             url: '/inventory/api/stock/' + bc,
             success: this.detailsResponse,
@@ -150,11 +153,11 @@ app.itemTemplateView = Backbone.View.extend({
     },
     renderDetails: function () {
         if (this.detailTemplate === null) {
-            const ctxt = $('#editItemDetails').html();
+            const ctxt = app.templates['editItemDetails'].innerHTML;
             const tmplt = _.unescape(ctxt);
             this.detailTemplate = _.template(tmplt);
         }
-        const tf = this.model.get('yardage')
+        const tf = this.model.get('yardage') === true;
         this.model.set('spanclass', (tf) ? '' : 'hidden');
         this.model.set('unit_label', (tf) ? 'Yards' : 'Count');
         const itmView = this.detailTemplate(this.model.attributes);
@@ -162,7 +165,7 @@ app.itemTemplateView = Backbone.View.extend({
     },
     renderItem: function (model, response, options) {
         if (this.editTemplate === null) {
-            const ctxt = $('#editItemTemplate').html();
+            const ctxt = app.templates['editItemTemplate'].innerHTML;
             const tmplt = _.unescape(ctxt);
             this.editTemplate = _.template(tmplt);
         }
@@ -175,9 +178,13 @@ app.itemTemplateView = Backbone.View.extend({
         const itmView = this.editTemplate(this.model.attributes);
         this.$el.html(itmView);
         const inp = this.el.querySelector('input[name="yardage"]');
-        const tf = this.model.get('yardage') === true;
-        inp.setAttribute('checked', tf);
-        inp.setAttribute('value', tf);
+        const ydg = this.model.get('yardage') === true;
+        if (ydg) {
+            inp.setAttribute('checked', '');
+        } else {
+            inp.removeAttribute('checked');
+        }
+        inp.setAttribute('value', ydg);
     },
     saveChange: function () {
         const changes = this.checkForm();

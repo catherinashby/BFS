@@ -9,6 +9,8 @@ urlpatterns = [
     path('shelves', views.shelves, name='shelves'),
     path('suppliers', views.suppliers, name='suppliers'),
     path('itemTemplates', views.itemTemplates, name='itemTemplates'),
+    path('stockTable', TemplateView.as_view(
+                       template_name="inventory/stockBookTable.html"), name='stockTable'),
     path('images', views.images, name='images'),
     path('identifier/<int:pk>', views.identifier_detail, name='identifier-detail'),
     path('images/upload', views.images_upload, name='images-upload'),

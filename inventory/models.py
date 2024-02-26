@@ -105,6 +105,9 @@ class ItemTemplate(models.Model):
     out_of_stock = models.BooleanField(default=False)
     notes = models.TextField(null=True, blank=True)
 
+    def type_item(self):
+        return 1 if self.yardage is True else 0
+
     def __str__(self):
         return '{}'.format(self.description)
 
@@ -130,8 +133,8 @@ class StockBook(models.Model):
     itm = models.OneToOneField(ItemTemplate, on_delete=models.CASCADE,
                                primary_key=True)
     loc = models.ForeignKey(Location, on_delete=models.CASCADE, null=True)
-    units = models.PositiveSmallIntegerField(null=True, blank=True)
-    eighths = models.PositiveSmallIntegerField(null=True, blank=True)
+    units = models.DecimalField(max_digits=8, decimal_places=3,
+                                null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

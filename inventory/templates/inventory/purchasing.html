@@ -111,7 +111,7 @@
               </div>
               <div>
                 <label for="yardage">Yardage?</label>
-                <input type="checkbox" id="yardage" name="yardage" defaultChecked="false" value="" />
+                <input type="checkbox" id="yardage" name="yardage" value="" />
               </div>
               <div class="lines">
                 <label for="part_unit">Part Unit:</label>
@@ -141,15 +141,10 @@
           </div>
           <div class="lines">
             <label for="units"><%= unit_label %>:</label>
-            <input type="number" id="units" name="units" maxlength="2"
+            <input type="number" id="units" name="units" maxlength="6"
                    value="<%= units %>" title="Units" class="short"/>
-            <span class="<%= spanclass %>">
-              <label for="eighths">1/8ths:</label>
-              <input type="number" id="eighths" name="eighths" maxlength="1"
-                     value="<%= eighths %>" title="Eighths" class="short"/>
-            </span>
+
             <div class="error" data-name="units"></div>
-            <div class="error" data-name="eighths"></div>
           </div>
           <div class="lines">
             <label for="cost">Cost:</label>

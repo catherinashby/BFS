@@ -1,0 +1,41 @@
+#wrapper {
+    width: 75vw;
+    margin: 0 auto;
+    }
+span.btn   {
+    display: inline-block;
+    background-color: #efefef;
+    border: thin solid black;
+    border-radius: 6px;
+    padding: 0.5ex 0.5em;
+    margin: 0.5ex 0;
+    cursor: pointer;
+    }
+span.btn:focus   {
+    border-width: medium;
+    }
+div.stockItem {
+    line-height: 1.5;
+    padding-bottom: 1ex;
+    border-bottom: thin solid black;
+    }
+div.stockItem div.buttons {
+    display: inline-block;
+    width: 4em;
+    padding: 1vh 0;
+    }
+div.dataBox {
+    width: calc(100% - 4.25em); /* width of 'buttons' column, and a bit */
+    float: right;
+    }
+div.flex {
+    display: flex;
+    justify-content: space-around;
+    }
+input[name="new_units"] {
+    max-width: 9ex;
+    }
+div.error {
+    text-align: center;
+    color: #cc0000;
+    }
